@@ -77,16 +77,12 @@ CSS = (
 '[data-testid="stSelectbox"] div[data-baseweb="select"] *,[data-testid="stMultiSelect"] div[data-baseweb="select"] *{color:#27374D!important;-webkit-text-fill-color:#27374D!important}'
 '[role="listbox"],[role="option"]{background:#F7FAFC!important;color:#27374D!important}'
 
-'[data-testid="stFileUploader"] [data-testid="stFileUploaderFile"],'
-'[data-testid="stFileUploader"] [data-testid="stFileUploaderFile"] div,'
-'[data-testid="stFileUploader"] [data-testid="stFileUploaderFile"] p,'
-'[data-testid="stFileUploader"] [data-testid="stFileUploaderFile"] span,'
-'[data-testid="stFileUploader"] [data-testid="stFileUploaderFile"] small,'
-'[data-testid="stFileUploader"] [data-testid="stFileUploaderFile"] a,'
-'[data-testid="stFileUploader"] [data-testid="stFileUploaderFile"] [title]{background:#F7FAFC!important;background-color:#F7FAFC!important;color:#27374D!important;-webkit-text-fill-color:#27374D!important;opacity:1!important;border-color:#9DB2BF!important}'
-'[data-testid="stFileUploader"] [data-testid="stFileUploaderFile"] svg{color:#27374D!important;stroke:#27374D!important;fill:none!important}'
-'[data-testid="stFileUploader"] [data-testid="stFileUploaderFile"] button{background:#DDE6ED!important;background-color:#DDE6ED!important;color:#27374D!important;border:1px solid #9DB2BF!important;border-radius:50%!important}'
-'[data-testid="stFileUploader"] [data-testid="stFileUploaderFile"] button svg{color:#27374D!important;stroke:#27374D!important}'
+'[data-testid="stFileUploader"] [data-testid="stFileUploaderFile"]{background:#171717!important;background-color:#171717!important;color:#FFFFFF!important;border:1px solid #171717!important;border-radius:11px!important;padding:8px 10px!important}'
+'[data-testid="stFileUploader"] [data-testid="stFileUploaderFile"] *{color:#FFFFFF!important;-webkit-text-fill-color:#FFFFFF!important;opacity:1!important}'
+'[data-testid="stFileUploader"] [data-testid="stFileUploaderFile"] span,[data-testid="stFileUploader"] [data-testid="stFileUploaderFile"] p,[data-testid="stFileUploader"] [data-testid="stFileUploaderFile"] div,[data-testid="stFileUploader"] [data-testid="stFileUploaderFile"] small,[data-testid="stFileUploader"] [data-testid="stFileUploaderFile"] a,[data-testid="stFileUploader"] [data-testid="stFileUploaderFile"] [title]{color:#FFFFFF!important;-webkit-text-fill-color:#FFFFFF!important;opacity:1!important}'
+'[data-testid="stFileUploader"] [data-testid="stFileUploaderFile"] svg{color:#FFFFFF!important;stroke:#FFFFFF!important;fill:none!important}'
+'[data-testid="stFileUploader"] [data-testid="stFileUploaderFile"] button{background:#526D82!important;background-color:#526D82!important;color:#FFFFFF!important;border:1px solid #9DB2BF!important;border-radius:50%!important}'
+'[data-testid="stFileUploader"] [data-testid="stFileUploaderFile"] button svg{color:#FFFFFF!important;stroke:#FFFFFF!important}'
 '</style>'
 )
 st.markdown(CSS, unsafe_allow_html=True)

@@ -1,5 +1,5 @@
 # ShelfAugment AI
 
-Streamlit app for shelf-image augmentation, YOLO annotation handling, batch processing, dataset QA, and TensorFlow input export.
+Streamlit application for retail shelf-image augmentation, YOLO annotation handling, batch processing, dataset quality checks and TensorFlow dataset export.
 
-Push these files to the GitHub repository connected to Streamlit Community Cloud. Use `app.py` as the app entry point.
+Deploy through Streamlit Community Cloud using this repository's `app.py` entry point. Commit all three files to the GitHub repository connected to your Streamlit app.
