@@ -72,6 +72,19 @@ CSS = (
 '[data-testid="stAlert"]{color:#27374D}'
 'hr{border-color:#9DB2BF!important}footer,#MainMenu{visibility:hidden}'
 '@media(max-width:900px){.block-container{padding-left:1rem;padding-right:1rem}.brand{padding:14px;flex-wrap:wrap}.brandtitle{font-size:21px}.brandsub{font-size:9px}.metriccard{min-height:96px;padding:12px}.metricvalue{font-size:25px}}'
+
+'[data-testid="stFileUploader"]{background:#F7FAFC!important;border:1px dashed #9DB2BF!important;border-radius:14px!important;padding:10px!important}'
+'[data-testid="stFileUploader"] [data-testid="stFileUploaderDropzone"]{background:#F7FAFC!important;background-color:#F7FAFC!important;border:1px solid #C4D1DB!important;border-radius:10px!important}'
+'[data-testid="stFileUploader"] [data-testid="stFileUploaderDropzone"] *{color:#27374D!important;-webkit-text-fill-color:#27374D!important}'
+'[data-testid="stFileUploader"] [data-testid="stFileUploaderDropzone"] button{background:#E7EEF3!important;background-color:#E7EEF3!important;color:#27374D!important;border:1px solid #9DB2BF!important}'
+'[data-testid="stFileUploader"] [data-testid="stFileUploaderFile"]{background:#171717!important;background-color:#171717!important;border:1px solid #171717!important;border-radius:11px!important}'
+'[data-testid="stFileUploader"] [data-testid="stFileUploaderFile"] div,[data-testid="stFileUploader"] [data-testid="stFileUploaderFile"] p,[data-testid="stFileUploader"] [data-testid="stFileUploaderFile"] span,[data-testid="stFileUploader"] [data-testid="stFileUploaderFile"] a,[data-testid="stFileUploader"] [data-testid="stFileUploaderFile"] small,[data-testid="stFileUploader"] [data-testid="stFileUploaderFile"] [title]{color:#FFFFFF!important;-webkit-text-fill-color:#FFFFFF!important;opacity:1!important}'
+'[data-testid="stFileUploader"] [data-testid="stFileUploaderFile"] svg{color:#FFFFFF!important;stroke:#FFFFFF!important}'
+'[data-testid="stFileUploader"] [data-testid="stFileUploaderFile"] button{background:#526D82!important;background-color:#526D82!important;color:#FFFFFF!important;border:1px solid #9DB2BF!important;border-radius:50%!important}'
+'[data-testid="stSelectbox"] div[data-baseweb="select"]>div,[data-testid="stMultiSelect"] div[data-baseweb="select"]>div{background:#F7FAFC!important;background-color:#F7FAFC!important;color:#27374D!important;border:1px solid #9DB2BF!important}'
+'[data-testid="stSelectbox"] div[data-baseweb="select"] *,[data-testid="stMultiSelect"] div[data-baseweb="select"] *{color:#27374D!important;-webkit-text-fill-color:#27374D!important}'
+'[role="listbox"],[role="option"]{background:#F7FAFC!important;color:#27374D!important}'
+
 '</style>'
 )
 st.markdown(CSS, unsafe_allow_html=True)
