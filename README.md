@@ -1,36 +1,38 @@
 # ShelfAugment AI — Streamlit Workspace
 
-A Streamlit application for retail shelf-image augmentation and YOLO dataset preparation.
+Retail shelf-image augmentation and YOLO dataset preparation application.
 
 ## Deploy with GitHub + Streamlit Community Cloud
 
-1. Create a GitHub repository.
-2. Upload `app.py`, `requirements.txt`, and `README.md` to the repository root.
-3. Open Streamlit Community Cloud and connect your GitHub account.
-4. Select the repository and branch.
-5. Set the main file path to `app.py`, then deploy.
+1. Extract this ZIP.
+2. Upload `app.py`, `requirements.txt`, `README.md`, and the `.streamlit/` folder to the root of your GitHub repository.
+3. Open Streamlit Community Cloud and connect the repository.
+4. Select the branch and set the main file path to `app.py`.
+5. Deploy. Streamlit installs packages from `requirements.txt`.
 
 ## Run locally
 
 ```bash
+python -m venv .venv
+# Windows: .venv\\Scripts\\activate
+# macOS/Linux: source .venv/bin/activate
 pip install -r requirements.txt
 streamlit run app.py
 ```
 
-## Included modules
+## Modules
 
-- Dashboard with session-based processing metrics and activity.
-- Image Studio for individual shelf images.
-- Lighting, camera-angle, perspective, and combined augmentation.
-- Batch processing with downloadable outputs and metadata.
-- YOLO annotation-aware transformations and dataset quality checks.
-- Dataset export/preparation utilities, including TensorFlow pipeline scaffolding where provided in the app.
+- **Overview:** session-based activity metrics and recent actions.
+- **Image Studio:** single-image Lighting, Camera angle, Perspective and Combined transformations; green YOLO overlays; side-by-side original/output comparison; updated image and label downloads.
+- **Batch Processing:** ZIP-based processing, matching image/label names, row-level annotation validation, metadata CSV, validation CSV, report JSON and output ZIP.
+- **Dataset QA:** accepts split YOLO datasets (`images/train`, `images/test`, `labels/train`, `labels/test`) and flat datasets (`images/`, `labels/`); reports exact invalid annotation rows.
+- **TensorFlow preparation:** creates 640×640 RGB letterboxed input data, normalized pixels, YOLO box arrays, padded `tf.data` pipeline source, and a JSON report. Invalid YOLO rows are excluded from exported label files and counted in the report. Augmented images are added only to the training split when their source image is assigned to training.
 
-## Important scope notes
+## Scope and limitations
 
-This app focuses on image augmentation and dataset preparation. It does not train a planogram-compliance detector or independently calculate detector metrics such as mAP, precision, recall, or F1. Dashboard metrics reflect actions performed during the current app session.
+This application performs augmentation and dataset preparation. It does **not** train or evaluate an object detector or calculate detector metrics such as mAP, precision, recall, or F1. TensorFlow is not installed in the Streamlit deployment because the app exports a TensorFlow pipeline script for execution in Kaggle or Colab. The generated script requires TensorFlow, OpenCV and NumPy in that environment.
 
-The TensorFlow export feature prepares a pipeline script; TensorFlow itself is not required to run this Streamlit app. Run the generated TensorFlow script in an environment where TensorFlow is installed.
+Perspective and combined augmentation strengths have been increased from the prior build. Inspect transformed images and green annotation overlays before using generated data for model training; augmentation strength is configurable and overly aggressive settings can distort products or filter boxes.
 
 ## Theme palette
 
