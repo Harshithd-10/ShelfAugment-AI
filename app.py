@@ -40,14 +40,17 @@ div.stButton>button[kind="secondary"]{background:#F8FBFE!important;color:var(--n
 [data-testid="stWidgetLabel"],[data-testid="stWidgetLabel"] *,label{color:var(--navy)!important;font-weight:600!important}
 [data-testid="stCaptionContainer"],[data-testid="stCaptionContainer"] *{color:var(--muted)!important}
 [data-testid="stFileUploader"]{background:var(--paper)!important;border:1px solid var(--line)!important;border-radius:18px!important;padding:12px!important;color:var(--ink)!important}
-[data-testid="stFileUploader"] [data-testid="stFileUploaderDropzone"]{background:#F5FAFF!important;border:1px solid #C4D8EA!important;border-radius:15px!important;min-height:86px!important;padding:12px 16px!important}
+[data-testid="stFileUploader"] [data-testid="stFileUploaderDropzone"]{background:#F5FAFF!important;border:1px solid #C4D8EA!important;border-radius:15px!important;min-height:120px!important;padding:14px 16px!important;display:flex!important;flex-direction:column!important;align-items:stretch!important;gap:10px!important}
 [data-testid="stFileUploader"] [data-testid="stFileUploaderDropzone"] *{color:var(--ink)!important;-webkit-text-fill-color:var(--ink)!important}
-[data-testid="stFileUploader"] [data-testid="stFileUploaderDropzone"] button{background:#E5F0F8!important;color:var(--navy)!important;border:1px solid #AFCBE2!important;border-radius:13px!important}
+[data-testid="stFileUploader"] [data-testid="stFileUploaderDropzone"] button{background:#E5F0F8!important;color:var(--navy)!important;border:1px solid #AFCBE2!important;border-radius:13px!important;align-self:flex-start!important;order:1!important}
 /* Match the reference: black selected-file chip with white filename. */
 [data-testid="stFileUploader"] [data-testid="stFileUploaderFile"]{
+  display:flex!important;flex:0 0 calc(100% - 4px)!important;
+  width:calc(100% - 4px)!important;max-width:calc(100% - 4px)!important;
+  box-sizing:border-box!important;order:0!important;
   background:#080808!important;background-color:#080808!important;
   border:1px solid #080808!important;border-radius:15px!important;
-  padding:10px 14px!important;color:#FFFFFF!important;opacity:1!important;
+  padding:10px 14px!important;min-height:76px!important;color:#FFFFFF!important;opacity:1!important;
 }
 [data-testid="stFileUploader"] [data-testid="stFileUploaderFile"] *,
 [data-testid="stFileUploader"] [data-testid="stFileUploaderFile"] [title],
