@@ -43,10 +43,27 @@ div.stButton>button[kind="secondary"]{background:#F8FBFE!important;color:var(--n
 [data-testid="stFileUploader"] [data-testid="stFileUploaderDropzone"]{background:#F5FAFF!important;border:1px solid #C4D8EA!important;border-radius:15px!important;min-height:86px!important;padding:12px 16px!important}
 [data-testid="stFileUploader"] [data-testid="stFileUploaderDropzone"] *{color:var(--ink)!important;-webkit-text-fill-color:var(--ink)!important}
 [data-testid="stFileUploader"] [data-testid="stFileUploaderDropzone"] button{background:#E5F0F8!important;color:var(--navy)!important;border:1px solid #AFCBE2!important;border-radius:13px!important}
-/* Uploaded filename chip follows the supplied reference. */
-[data-testid="stFileUploader"] [data-testid="stFileUploaderFile"]{background:#080808!important;border:1px solid #080808!important;border-radius:15px!important;padding:10px 14px!important;color:#fff!important}
-[data-testid="stFileUploader"] [data-testid="stFileUploaderFile"] *{color:#fff!important;-webkit-text-fill-color:#fff!important;opacity:1!important}
-[data-testid="stFileUploader"] [data-testid="stFileUploaderFile"] button{background:#080808!important;color:#fff!important;border:1px solid #DDE6ED!important;border-radius:50%!important}
+/* Keep the selected shelf image filename readable across Streamlit versions. */
+[data-testid="stFileUploader"] [data-testid="stFileUploaderFile"]{
+  background:#F9FCFF!important;background-color:#F9FCFF!important;
+  border:1px solid #BBD4EA!important;border-radius:15px!important;
+  padding:10px 14px!important;color:#172F5B!important;opacity:1!important;
+}
+[data-testid="stFileUploader"] [data-testid="stFileUploaderFile"] *,
+[data-testid="stFileUploader"] [data-testid="stFileUploaderFile"] [title],
+[data-testid="stFileUploader"] [data-testid="stFileUploaderFile"] p,
+[data-testid="stFileUploader"] [data-testid="stFileUploaderFile"] span,
+[data-testid="stFileUploader"] [data-testid="stFileUploaderFile"] a{
+  color:#172F5B!important;-webkit-text-fill-color:#172F5B!important;
+  opacity:1!important;text-shadow:none!important;
+}
+[data-testid="stFileUploader"] [data-testid="stFileUploaderFile"] svg{
+  color:#172F5B!important;fill:none!important;stroke:#172F5B!important;opacity:1!important;
+}
+[data-testid="stFileUploader"] [data-testid="stFileUploaderFile"] button{
+  background:#E5F0F8!important;color:#172F5B!important;
+  border:1px solid #AFCBE2!important;border-radius:50%!important;
+}
 [data-testid="stSelectbox"] [data-baseweb="select"]>div,[data-testid="stMultiSelect"] [data-baseweb="select"]>div,div[data-baseweb="select"]>div{background:#F9FCFF!important;color:var(--ink)!important;border:1px solid var(--line)!important;border-radius:12px!important;box-shadow:0 1px 3px rgba(39,55,77,.06)!important}
 [data-testid="stSelectbox"] [data-baseweb="select"] *,[data-testid="stMultiSelect"] [data-baseweb="select"] *,div[data-baseweb="select"] *{color:var(--ink)!important;-webkit-text-fill-color:var(--ink)!important}
 [data-baseweb="popover"],[data-baseweb="menu"],[role="listbox"],[role="option"]{background:#F9FCFF!important;color:var(--ink)!important}
