@@ -1,10 +1,8 @@
 
-import io
-import os
-import zipfile
-import tempfile
+import io, os, json, random, zipfile, tempfile, shutil
 from pathlib import Path
-
+from datetime import datetime
+from collections import Counter
 import albumentations as A
 import cv2
 import numpy as np
@@ -12,291 +10,432 @@ import pandas as pd
 import streamlit as st
 from PIL import Image
 
-CLASS_NAMES = [
-    "Coca Cola", "Sprite", "Pepsi",
-    "Mountain Dew", "7UP", "Fanta"
-]
+CLASSES = ["Coca Cola", "Sprite", "Pepsi", "Mountain Dew", "7UP", "Fanta"]
+EXTS = {".jpg", ".jpeg", ".png"}
+METHODS = {"lighting":"Lighting", "camera_angle":"Camera angle", "perspective":"Perspective", "combined":"Combined"}
+st.set_page_config(page_title="ShelfAugment AI", page_icon="🛒", layout="wide")
 
-st.set_page_config(
-    page_title="ShelfAugment AI",
-    page_icon="🛒",
-    layout="wide"
+CSS = (
+'<style>'
+':root{--ivory:#DDE6ED;--paper:#F7FAFC;--sage:#9DB2BF;--sage2:#526D82;--forest:#27374D;--deep:#27374D;--terra:#526D82;--ink:#27374D;--muted:#526D82;--line:#C7D3DD}'
+'.stApp{background:var(--ivory);color:var(--ink)}[data-testid="stHeader"]{background:rgba(245,244,237,.94)}'
+'[data-testid="stSidebar"]{background:#DDE6ED;border-right:1px solid #9DB2BF}[data-testid="stSidebar"] *{color:var(--deep)}'
+'.block-container{padding-top:1.4rem;padding-bottom:3rem;max-width:1480px}h1,h2,h3{color:var(--deep)!important;letter-spacing:-.025em}'
+'.brand{display:flex;align-items:center;gap:14px;padding:18px 22px;background:var(--forest);border-radius:17px;color:#F7FAFC;margin-bottom:20px}'
+'.brandmark{width:46px;height:46px;display:grid;place-items:center;border-radius:13px;background:#9DB2BF;color:var(--forest);font-size:25px}'
+'.brandtitle{font-size:25px;font-weight:750;color:#F7FAFC;line-height:1.15}.brandsub{font-size:11px;color:#DDE6ED;letter-spacing:.12em;text-transform:uppercase;margin-top:5px}'
+'.kicker{font-size:11px;color:var(--sage2);font-weight:750;letter-spacing:.13em;text-transform:uppercase}'
+'.metriccard{background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:17px;min-height:108px}'
+'.metriclabel{font-size:12px;color:var(--muted);font-weight:650}.metricvalue{font-size:29px;color:var(--deep);font-weight:750;margin-top:7px}'
+'.metricnote{font-size:11px;color:var(--sage2);margin-top:6px}.panel{background:var(--paper);border:1px solid var(--line);border-radius:15px;padding:17px 19px;margin:8px 0 15px}'
+'.softnote{background:#DDE6ED;border-left:4px solid var(--sage2);border-radius:9px;padding:12px 15px;color:#27374D;font-size:13px}'
+'div.stButton>button,div.stDownloadButton>button{background:#526D82;color:white;border:1px solid #526D82;border-radius:10px;font-weight:650;min-height:42px}'
+'div.stButton>button:hover,div.stDownloadButton>button:hover{background:#27374D;color:white;border-color:#27374D}'
+'div.stButton>button[kind="secondary"]{background:#F7FAFC;color:#27374D;border-color:#9DB2BF}'
+'[data-testid="stFileUploader"]{background:#F7FAFC;border:1px dashed #9DB2BF;border-radius:12px;padding:8px}'
+'[data-testid="stMetric"]{background:var(--paper);border:1px solid var(--line);border-radius:12px;padding:12px}'
+'[data-testid="stDataFrame"]{border:1px solid var(--line);border-radius:11px;overflow:hidden}hr{border-color:var(--line)}footer,#MainMenu{visibility:hidden}'
+'</style>'
 )
+st.markdown(CSS, unsafe_allow_html=True)
 
-st.markdown("""
-<style>
-.block-container {padding-top: 1.6rem; padding-bottom: 2rem;}
-.hero {
-  padding: 1.4rem 1.6rem; border-radius: 16px;
-  background: linear-gradient(120deg,#102a43,#176b87);
-  color: white; margin-bottom: 1rem;
-}
-.hero h1 {color:white; margin:0;}
-.hero p {color:#e4f1f7; margin:.4rem 0 0 0;}
-.small-note {color: #64748b; font-size: .9rem;}
-</style>
-<div class="hero">
-  <h1>🛒 ShelfAugment AI</h1>
-  <p>Retail shelf-image augmentation with YOLO bounding-box preservation.</p>
-</div>
-""", unsafe_allow_html=True)
+def init():
+    defaults={"history":[],"images_processed":0,"augmented_samples":0,"batch_runs":0,
+      "original_boxes":0,"generated_boxes":0,"method_counts":Counter(),"single_result":None,
+      "batch_df":None,"batch_zip":None,"batch_report":None,"qa_df":None,"tf_zip":None,"tf_report":None}
+    for k,v in defaults.items():
+        if k not in st.session_state: st.session_state[k]=v
+init()
 
-def decode_image(upload):
-    raw = np.frombuffer(upload.getvalue(), dtype=np.uint8)
-    image = cv2.imdecode(raw, cv2.IMREAD_COLOR)
-    if image is None:
-        raise ValueError("The uploaded file is not a supported image.")
-    return cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+def add_event(row):
+    st.session_state.history.insert(0,row)
+    st.session_state.history=st.session_state.history[:30]
 
-def parse_yolo(text, class_count=len(CLASS_NAMES)):
-    boxes, labels = [], []
-    if not text or not text.strip():
-        return boxes, labels
-    for line_no, line in enumerate(text.strip().splitlines(), 1):
-        vals = line.split()
-        if len(vals) != 5:
-            raise ValueError(f"Annotation line {line_no} must contain 5 values.")
-        cls = int(vals[0])
-        box = [float(x) for x in vals[1:]]
-        if not 0 <= cls < class_count:
-            raise ValueError(f"Invalid class ID {cls} on line {line_no}.")
-        xc, yc, w, h = box
-        if not (0 <= xc <= 1 and 0 <= yc <= 1 and 0 < w <= 1 and 0 < h <= 1):
-            raise ValueError(f"Invalid normalized YOLO box on line {line_no}.")
-        boxes.append(box)
-        labels.append(cls)
-    return boxes, labels
+def card(label,value,note):
+    st.markdown(f'<div class="metriccard"><div class="metriclabel">{label}</div><div class="metricvalue">{value}</div><div class="metricnote">{note}</div></div>',unsafe_allow_html=True)
 
-def encode_yolo(boxes, labels):
-    rows = []
-    for cls, box in zip(labels, boxes):
-        rows.append(str(int(cls)) + " " + " ".join(f"{float(v):.6f}" for v in box))
-    return "\n".join(rows) + ("\n" if rows else "")
+def decode(upload):
+    a=np.frombuffer(upload.getvalue(),np.uint8); im=cv2.imdecode(a,cv2.IMREAD_COLOR)
+    if im is None: raise ValueError("Image could not be decoded.")
+    return cv2.cvtColor(im,cv2.COLOR_BGR2RGB)
 
-def apply_augmentation(image, boxes, labels, mode, brightness, contrast, angle, scale, perspective):
-    h, w = image.shape[:2]
-    bbox_params = A.BboxParams(
-        format="yolo", label_fields=["class_labels"],
-        min_visibility=0.30, clip=True, filter_invalid_bboxes=True
-    )
+def parse_yolo(txt):
+    boxes=[]; labels=[]
+    if not txt.strip(): return boxes,labels
+    for n,line in enumerate(txt.strip().splitlines(),1):
+        v=line.split()
+        if len(v)!=5: raise ValueError(f"YOLO row {n} must contain five values.")
+        try: c=int(v[0]); b=list(map(float,v[1:]))
+        except ValueError: raise ValueError(f"Non-numeric value in YOLO row {n}.")
+        x,y,w,h=b
+        if not 0<=c<len(CLASSES): raise ValueError(f"Invalid class ID in row {n}.")
+        if not(0<=x<=1 and 0<=y<=1 and 0<w<=1 and 0<h<=1 and x-w/2>=-1e-6 and y-h/2>=-1e-6 and x+w/2<=1.000001 and y+h/2<=1.000001):
+            raise ValueError(f"Invalid normalized box in row {n}.")
+        boxes.append(b); labels.append(c)
+    return boxes,labels
 
-    if mode == "Lighting":
-        aug = A.Compose([
-            A.RandomBrightnessContrast(
-                brightness_limit=(-brightness, brightness),
-                contrast_limit=(-contrast, contrast), p=1.0
-            ),
-            A.RandomGamma(gamma_limit=(75, 125), p=0.5)
-        ])
-        result = aug(image=image)
-        out_boxes, out_labels = boxes, labels
+def validate(txt):
+    r={"rows":0,"valid_rows":0,"malformed_rows":0,"invalid_class_ids":0,"invalid_coordinates":0}
+    for line in txt.strip().splitlines():
+        if not line.strip(): continue
+        r["rows"]+=1; v=line.split()
+        if len(v)!=5: r["malformed_rows"]+=1; continue
+        try: c=int(v[0]); x,y,w,h=map(float,v[1:])
+        except ValueError: r["malformed_rows"]+=1; continue
+        if not 0<=c<len(CLASSES): r["invalid_class_ids"]+=1; continue
+        if not(0<=x<=1 and 0<=y<=1 and 0<w<=1 and 0<h<=1 and x-w/2>=-1e-6 and y-h/2>=-1e-6 and x+w/2<=1.000001 and y+h/2<=1.000001):
+            r["invalid_coordinates"]+=1; continue
+        r["valid_rows"]+=1
+    return r
 
-    elif mode == "Camera angle":
-        aug = A.Compose([
-            A.Affine(
-                rotate=(-angle, angle),
-                scale=(max(0.5, 1-scale), 1+scale),
-                p=1.0,
-                border_mode=cv2.BORDER_CONSTANT,
-                fill=(114, 114, 114)
-            )
-        ], bbox_params=bbox_params)
-        result = aug(image=image, bboxes=boxes, class_labels=labels)
-        out_boxes, out_labels = result["bboxes"], result["class_labels"]
+def encode(boxes,labels):
+    return "".join(str(int(c))+" "+" ".join(f"{float(x):.6f}" for x in b)+"\n" for c,b in zip(labels,boxes))
 
-    elif mode == "Perspective":
-        aug = A.Compose([
-            A.Perspective(
-                scale=(0.02, perspective),
-                keep_size=True,
-                fit_output=False,
-                p=1.0,
-                border_mode=cv2.BORDER_CONSTANT,
-                fill=(114, 114, 114)
-            )
-        ], bbox_params=bbox_params)
-        result = aug(image=image, bboxes=boxes, class_labels=labels)
-        out_boxes, out_labels = result["bboxes"], result["class_labels"]
-
-    else:  # Combined lighting + camera geometry
-        aug = A.Compose([
-            A.Affine(
-                rotate=(-angle, angle),
-                scale=(max(0.5, 1-scale), 1+scale),
-                p=1.0,
-                border_mode=cv2.BORDER_CONSTANT,
-                fill=(114, 114, 114)
-            ),
-            A.RandomBrightnessContrast(
-                brightness_limit=(-brightness, brightness),
-                contrast_limit=(-contrast, contrast), p=1.0
-            ),
-            A.RandomGamma(gamma_limit=(90, 110), p=0.5)
-        ], bbox_params=bbox_params)
-        result = aug(image=image, bboxes=boxes, class_labels=labels)
-        out_boxes, out_labels = result["bboxes"], result["class_labels"]
-
-    return result["image"], list(out_boxes), list(out_labels)
-
-def draw_boxes(image, boxes, labels):
-    canvas = image.copy()
-    h, w = canvas.shape[:2]
-    for box, cls in zip(boxes, labels):
-        xc, yc, bw, bh = box
-        x1, y1 = int((xc-bw/2)*w), int((yc-bh/2)*h)
-        x2, y2 = int((xc+bw/2)*w), int((yc+bh/2)*h)
-        cv2.rectangle(canvas, (x1,y1), (x2,y2), (0,255,0), max(2, w//900))
-        name = CLASS_NAMES[int(cls)] if 0 <= int(cls) < len(CLASS_NAMES) else str(cls)
-        cv2.putText(canvas, name, (x1, max(18,y1-6)), cv2.FONT_HERSHEY_SIMPLEX,
-                    max(.45,w/2500), (255,0,0), 2)
-    return canvas
-
-def to_png_bytes(image):
-    return Image.fromarray(image).convert("RGB").save_to_bytes() if hasattr(Image.Image, "save_to_bytes") else pil_png(image)
-
-def pil_png(image):
-    buf = io.BytesIO()
-    Image.fromarray(image).save(buf, format="PNG")
-    return buf.getvalue()
-
-tabs = st.tabs(["Dashboard", "Image Studio", "Batch Dataset", "About"])
-
-with tabs[0]:
-    st.subheader("Project dashboard")
-    c1,c2,c3 = st.columns(3)
-    c1.metric("Augmentation modes", "4")
-    c2.metric("Annotation format", "YOLO")
-    c3.metric("Product classes", "6")
-    st.markdown("#### Available transformations")
-    st.write("- **Lighting:** brightness, contrast and gamma variation.")
-    st.write("- **Camera angle:** small affine rotation and scale changes.")
-    st.write("- **Perspective:** simulated viewpoint variation.")
-    st.write("- **Combined:** geometric and lighting transformations together.")
-    st.info("This application prepares augmented images and annotations. It does not train or evaluate a planogram-compliance detector.")
-
-with tabs[1]:
-    st.subheader("Single-image augmentation")
-    left,right = st.columns([1,1])
-    with left:
-        image_file = st.file_uploader("Upload a shelf image", type=["jpg","jpeg","png"], key="single_img")
-        label_file = st.file_uploader("Optional YOLO annotation (.txt)", type=["txt"], key="single_lbl")
-        mode = st.selectbox("Augmentation method", ["Lighting","Camera angle","Perspective","Combined"])
-        with st.expander("Augmentation controls", expanded=True):
-            brightness = st.slider("Brightness strength", 0.0, 0.5, 0.20, 0.01)
-            contrast = st.slider("Contrast strength", 0.0, 0.5, 0.20, 0.01)
-            angle = st.slider("Maximum rotation (degrees)", 0, 15, 5)
-            scale = st.slider("Scale variation", 0.0, 0.25, 0.05, 0.01)
-            perspective = st.slider("Maximum perspective strength", 0.02, 0.10, 0.05, 0.01)
-        run = st.button("Generate augmented image", type="primary", use_container_width=True)
-    if image_file:
-        try:
-            original = decode_image(image_file)
-            annotation_text = label_file.getvalue().decode("utf-8") if label_file else ""
-            boxes, labels = parse_yolo(annotation_text)
-            with right:
-                st.image(draw_boxes(original, boxes, labels), caption="Original image", use_container_width=True)
-                st.caption(f"Image size: {original.shape[1]} × {original.shape[0]} | YOLO boxes: {len(boxes)}")
-            if run:
-                augmented, new_boxes, new_labels = apply_augmentation(
-                    original, boxes, labels, mode, brightness, contrast, angle, scale, perspective
-                )
-                st.success("Augmentation completed.")
-                a,b = st.columns(2)
-                a.image(draw_boxes(augmented,new_boxes,new_labels), caption=f"{mode} result", use_container_width=True)
-                b.metric("Original boxes", len(boxes))
-                b.metric("Retained boxes", len(new_boxes))
-                b.metric("Boxes removed by visibility filtering", max(0,len(boxes)-len(new_boxes)))
-                st.download_button("Download augmented image", pil_png(augmented),
-                    file_name=f"shelfaugment_{mode.lower().replace(' ','_')}.png", mime="image/png")
-                st.download_button("Download updated YOLO labels", encode_yolo(new_boxes,new_labels),
-                    file_name="augmented_labels.txt", mime="text/plain")
-        except Exception as e:
-            st.error(f"Could not process this upload: {e}")
+def transform(im,boxes,labels,mode,bright=.15,contrast=.15,angle=5,scale=.05,persp=.04):
+    bp=A.BboxParams(format="yolo",label_fields=["class_labels"],min_visibility=.30,clip=True,filter_invalid_bboxes=True)
+    if mode=="Lighting":
+        t=A.Compose([A.RandomBrightnessContrast(brightness_limit=(-bright,bright),contrast_limit=(-contrast,contrast),p=1),A.RandomGamma(gamma_limit=(75,125),p=.5)])
+        r=t(image=im); nb,nl=list(boxes),list(labels)
+    elif mode=="Camera angle":
+        t=A.Compose([A.Affine(rotate=(-angle,angle),scale=(max(.5,1-scale),1+scale),p=1,border_mode=cv2.BORDER_CONSTANT,fill=(114,114,114))],bbox_params=bp)
+        r=t(image=im,bboxes=boxes,class_labels=labels); nb,nl=list(r["bboxes"]),list(r["class_labels"])
+    elif mode=="Perspective":
+        t=A.Compose([A.Perspective(scale=(.02,max(.021,persp)),keep_size=True,fit_output=False,p=1,border_mode=cv2.BORDER_CONSTANT,fill=(114,114,114))],bbox_params=bp)
+        r=t(image=im,bboxes=boxes,class_labels=labels); nb,nl=list(r["bboxes"]),list(r["class_labels"])
     else:
-        st.info("Upload an image to begin. YOLO labels are optional; without them, only the image is transformed.")
+        t=A.Compose([A.Affine(rotate=(-angle,angle),scale=(max(.5,1-scale),1+scale),p=1,border_mode=cv2.BORDER_CONSTANT,fill=(114,114,114)),A.RandomBrightnessContrast(brightness_limit=(-bright,bright),contrast_limit=(-contrast,contrast),p=1),A.RandomGamma(gamma_limit=(90,110),p=.5)],bbox_params=bp)
+        r=t(image=im,bboxes=boxes,class_labels=labels); nb,nl=list(r["bboxes"]),list(r["class_labels"])
+    return r["image"],nb,nl
 
-with tabs[2]:
-    st.subheader("Batch dataset augmentation")
-    st.write("Upload a ZIP containing an `images/` folder and an optional `labels/` folder. Label files must share image filenames.")
-    batch_zip = st.file_uploader("Dataset ZIP", type=["zip"], key="batch_zip")
-    batch_modes = st.multiselect("Methods to generate", ["lighting","camera_angle","perspective","combined"],
-                                 default=["lighting","camera_angle","combined"])
-    batch_brightness = st.slider("Batch brightness/contrast strength", 0.0, 0.5, 0.15, 0.01)
-    batch_angle = st.slider("Batch maximum rotation", 0, 15, 5)
-    process = st.button("Process batch and create ZIP", type="primary", disabled=batch_zip is None)
-    if process and batch_zip:
+def draw(im,boxes,labels):
+    out=im.copy(); h,w=out.shape[:2]
+    for b,c in zip(boxes,labels):
+        x,y,bw,bh=b; p1=(max(0,int((x-bw/2)*w)),max(0,int((y-bh/2)*h))); p2=(min(w-1,int((x+bw/2)*w)),min(h-1,int((y+bh/2)*h)))
+        cv2.rectangle(out,p1,p2,(74,112,81),max(2,w//900))
+        cv2.putText(out,CLASSES[int(c)],(p1[0],max(18,p1[1]-6)),cv2.FONT_HERSHEY_SIMPLEX,max(.45,w/2500),(165,83,59),2)
+    return out
+
+def png(im):
+    b=io.BytesIO(); Image.fromarray(im).convert("RGB").save(b,format="PNG"); return b.getvalue()
+
+def image_paths(folder):
+    return sorted(p for p in folder.rglob("*") if p.is_file() and p.suffix.lower() in EXTS)
+
+def safe_extract(upload,dest):
+    with zipfile.ZipFile(upload) as z:
+        for m in z.infolist():
+            target=(dest/m.filename).resolve()
+            if not str(target).startswith(str(dest.resolve())+os.sep) and target!=dest.resolve(): raise ValueError("Unsafe path in ZIP.")
+        z.extractall(dest)
+
+def zip_dir(folder):
+    b=io.BytesIO()
+    with zipfile.ZipFile(b,"w",zipfile.ZIP_DEFLATED) as z:
+        for p in folder.rglob("*"):
+            if p.is_file(): z.write(p,p.relative_to(folder))
+    return b.getvalue()
+
+def make_tf_source():
+    lines=[
+'import os, glob, cv2, numpy as np, tensorflow as tf',
+'ROOT=os.path.dirname(os.path.abspath(__file__)); SIZE=640; BATCH=8',
+'def preprocess(ip,lp):',
+' im=cv2.imread(ip)',
+' if im is None: raise ValueError(ip)',
+' im=cv2.cvtColor(im,cv2.COLOR_BGR2RGB); h,w=im.shape[:2]; scale=min(SIZE/w,SIZE/h)',
+' nw,nh=round(w*scale),round(h*scale); resized=cv2.resize(im,(nw,nh)); canvas=np.zeros((SIZE,SIZE,3),np.uint8)',
+' px,py=(SIZE-nw)//2,(SIZE-nh)//2; canvas[py:py+nh,px:px+nw]=resized; boxes=[]',
+' if os.path.exists(lp):',
+'  for line in open(lp,encoding="utf-8"):',
+'   v=line.split()',
+'   if len(v)!=5: continue',
+'   c=int(v[0]); x,y,bw,bh=map(float,v[1:]); boxes.append([c,(x*w*scale+px)/SIZE,(y*h*scale+py)/SIZE,bw*w*scale/SIZE,bh*h*scale/SIZE])',
+' return canvas.astype(np.float32)/255.,np.asarray(boxes,np.float32).reshape(-1,5)',
+'def gen(split):',
+' idir=os.path.join(ROOT,split,"images"); ldir=os.path.join(ROOT,split,"labels")',
+' paths=sorted(sum([glob.glob(os.path.join(idir,p)) for p in ("*.jpg","*.jpeg","*.png")],[]))',
+' for p in paths: yield preprocess(p,os.path.join(ldir,os.path.splitext(os.path.basename(p))[0]+".txt"))',
+'SIG=(tf.TensorSpec((SIZE,SIZE,3),tf.float32),tf.TensorSpec((None,5),tf.float32))',
+'def make_ds(split):',
+' ds=tf.data.Dataset.from_generator(lambda:gen(split),output_signature=SIG)',
+' return ds.padded_batch(BATCH,padded_shapes=([SIZE,SIZE,3],[None,5]),padding_values=(np.float32(0),np.float32(-1))).prefetch(tf.data.AUTOTUNE)',
+'train_dataset=make_ds("train"); val_dataset=make_ds("val"); test_dataset=make_ds("test")',
+'if __name__=="__main__":',
+' for n,d in [("train",train_dataset),("val",val_dataset),("test",test_dataset)]:',
+'  for x,y in d.take(1): print(n,x.shape,y.shape,float(tf.reduce_min(x)),float(tf.reduce_max(x)))'
+]
+    return "\n".join(lines)+"\n"
+
+
+def make_tf_source():
+    lines = [
+        "import os, glob, cv2, numpy as np, tensorflow as tf",
+        "ROOT=os.path.dirname(os.path.abspath(__file__)); SIZE=640; BATCH=8",
+        "def preprocess(ip,lp):",
+        " im=cv2.imread(ip)",
+        " if im is None: raise ValueError(ip)",
+        " im=cv2.cvtColor(im,cv2.COLOR_BGR2RGB); h,w=im.shape[:2]; scale=min(SIZE/w,SIZE/h)",
+        " nw,nh=round(w*scale),round(h*scale); resized=cv2.resize(im,(nw,nh)); canvas=np.zeros((SIZE,SIZE,3),np.uint8)",
+        " px,py=(SIZE-nw)//2,(SIZE-nh)//2; canvas[py:py+nh,px:px+nw]=resized; boxes=[]",
+        " if os.path.exists(lp):",
+        "  for line in open(lp,encoding='utf-8'):",
+        "   v=line.split()",
+        "   if len(v)!=5: continue",
+        "   c=int(v[0]); x,y,bw,bh=map(float,v[1:]); boxes.append([c,(x*w*scale+px)/SIZE,(y*h*scale+py)/SIZE,bw*w*scale/SIZE,bh*h*scale/SIZE])",
+        " return canvas.astype(np.float32)/255.,np.asarray(boxes,np.float32).reshape(-1,5)",
+        "def gen(split):",
+        " idir=os.path.join(ROOT,split,'images'); ldir=os.path.join(ROOT,split,'labels')",
+        " paths=sorted(sum([glob.glob(os.path.join(idir,p)) for p in ('*.jpg','*.jpeg','*.png')],[]))",
+        " for p in paths: yield preprocess(p,os.path.join(ldir,os.path.splitext(os.path.basename(p))[0]+'.txt'))",
+        "SIG=(tf.TensorSpec((SIZE,SIZE,3),tf.float32),tf.TensorSpec((None,5),tf.float32))",
+        "def make_ds(split):",
+        " ds=tf.data.Dataset.from_generator(lambda:gen(split),output_signature=SIG)",
+        " return ds.padded_batch(BATCH,padded_shapes=([SIZE,SIZE,3],[None,5]),padding_values=(np.float32(0),np.float32(-1))).prefetch(tf.data.AUTOTUNE)",
+        "train_dataset=make_ds('train'); val_dataset=make_ds('val'); test_dataset=make_ds('test')",
+        "if __name__=='__main__':",
+        " for n,d in [('train',train_dataset),('val',val_dataset),('test',test_dataset)]:",
+        "  for x,y in d.take(1): print(n,x.shape,y.shape,float(tf.reduce_min(x)),float(tf.reduce_max(x)))",
+    ]
+    return "\\n".join(lines) + "\\n"
+
+def make_tf_package(orig_zip,aug_zip,seed=42,val_fraction=.2):
+    with tempfile.TemporaryDirectory() as td:
+        root=Path(td); src=root/"src"; src.mkdir(); safe_extract(orig_zip,src)
+        need=[src/"images"/"train",src/"images"/"test",src/"labels"/"train",src/"labels"/"test"]
+        if not all(p.exists() for p in need): raise ValueError("Original ZIP must contain images/train, images/test, labels/train and labels/test.")
+        train=image_paths(src/"images"/"train"); test=image_paths(src/"images"/"test")
+        if not train or not test: raise ValueError("Both train and test image folders need images.")
+        rng=random.Random(seed); shuffled=train.copy(); rng.shuffle(shuffled); nval=max(1,round(len(train)*val_fraction)) if len(train)>1 else 0
+        valstems={p.stem for p in shuffled[:nval]}; trainstems={p.stem for p in train}-valstems
+        out=root/"tensorflow_dataset"
+        for s in ("train","val","test"): (out/s/"images").mkdir(parents=True); (out/s/"labels").mkdir()
+        def cp(im,split,label_split,prefix):
+            name=prefix+im.name; shutil.copy2(im,out/split/"images"/name); lab=src/"labels"/label_split/(im.stem+".txt")
+            if lab.exists(): shutil.copy2(lab,out/split/"labels"/(Path(name).stem+".txt"))
+            else: (out/split/"labels"/(Path(name).stem+".txt")).write_text("")
+        for im in train: cp(im,"val" if im.stem in valstems else "train","train","original_")
+        for im in test: cp(im,"test","test","test_")
+        added=0
+        if aug_zip:
+            ar=root/"aug"; ar.mkdir(); safe_extract(aug_zip,ar); mp=ar/"augmentation_metadata.csv"
+            if not mp.exists(): raise ValueError("Augmented ZIP must contain augmentation_metadata.csv.")
+            df=pd.read_csv(mp)
+            if not {"source_image","image","label"}.issubset(df.columns): raise ValueError("Metadata needs source_image, image and label columns.")
+            for _,row in df.iterrows():
+                if Path(str(row.source_image)).stem not in trainstems: continue
+                ip=ar/str(row.image); lp=ar/str(row.label)
+                if not ip.exists(): continue
+                name="aug_"+Path(str(row.image)).parts[0]+"_"+ip.name; shutil.copy2(ip,out/"train"/"images"/name)
+                if lp.exists(): shutil.copy2(lp,out/"train"/"labels"/(Path(name).stem+".txt"))
+                else: (out/"train"/"labels"/(Path(name).stem+".txt")).write_text("")
+                added+=1
+        counts={s:{"images":len(image_paths(out/s/"images")),"labels":len(list((out/s/"labels").glob("*.txt")))} for s in ("train","val","test")}
+        report={"framework":"TensorFlow","image_size":640,"batch_size":8,"normalization":"RGB / 255.0","annotation_format":"YOLO","seed":seed,"validation_fraction":val_fraction,"augmented_samples_added_to_train":added,"splits":counts,"leakage_control":"Validation and test contain original images only; augmented samples are added to training only."}
+        (out/"tensorflow_integration_report.json").write_text(json.dumps(report,indent=2))
+        (out/"tensorflow_input_pipeline.py").write_text(make_tf_source())
+        (out/"README_TENSORFLOW.md").write_text("Install tensorflow, opencv-python-headless and numpy in Kaggle/Colab. Run python tensorflow_input_pipeline.py. Images are letterboxed to 640x640 RGB and normalized to 0-1. YOLO boxes use [class_id, x_center, y_center, width, height]. Padded box rows use -1. This prepares inputs; it does not train a detector.")
+        return zip_dir(out),report
+
+st.markdown('<div class="brand"><div class="brandmark">▦</div><div><div class="brandtitle">ShelfAugment AI</div><div class="brandsub">Retail image intelligence · Dataset preparation workspace</div></div><div style="margin-left:auto;text-align:right;color:#DDE6ED;font-size:11px">PROJECT WORKSPACE<br><b style="color:#fff">YOLO ANNOTATION AWARE</b></div></div>',unsafe_allow_html=True)
+with st.sidebar:
+    st.markdown("### ShelfAugment AI"); st.caption("Retail image augmentation")
+    page=st.radio("WORKSPACE",["Overview","Image Studio","Batch Processing","Dataset QA & TensorFlow","Project Guide"])
+    st.divider(); st.caption("Annotation · YOLO"); st.caption("Product categories · 6"); st.caption("TensorFlow export · 640 × 640")
+
+if page=="Overview":
+    st.markdown('<div class="kicker">WORKSPACE OVERVIEW</div>',unsafe_allow_html=True); st.title("Project dashboard")
+    st.write("Live activity from image transformations, batch jobs and dataset preparation in this app session.")
+    retention=100*st.session_state.generated_boxes/st.session_state.original_boxes if st.session_state.original_boxes else None
+    c=st.columns(4)
+    with c[0]: card("Images processed",f'{st.session_state.images_processed:,}',"Current session")
+    with c[1]: card("Augmented samples",f'{st.session_state.augmented_samples:,}',"Generated outputs")
+    with c[2]: card("Bounding-box retention",f'{retention:.1f}%' if retention is not None else "—","Weighted across labelled jobs")
+    with c[3]: card("Batch runs",f'{st.session_state.batch_runs:,}',"Completed jobs")
+    st.markdown("### Augmentation activity")
+    if st.session_state.method_counts:
+        df=pd.DataFrame([{"Method":METHODS.get(k,k.title()),"Samples":v} for k,v in st.session_state.method_counts.items()]).set_index("Method")
+        a,b=st.columns([1.4,1])
+        with a: st.markdown('<div class="panel"><b>Samples generated by method</b>',unsafe_allow_html=True); st.bar_chart(df,color="#526D82",height=260); st.markdown("</div>",unsafe_allow_html=True)
+        with b:
+            st.markdown('<div class="panel"><b>Annotation summary</b>',unsafe_allow_html=True)
+            st.metric("Original boxes",f'{st.session_state.original_boxes:,}'); st.metric("Generated boxes",f'{st.session_state.generated_boxes:,}'); st.metric("Retention",f'{retention:.1f}%' if retention is not None else "—"); st.markdown("</div>",unsafe_allow_html=True)
+    else: st.markdown('<div class="panel"><b>No processing activity in this session yet.</b><br><span style="color:#526D82">Figures are calculated from actual actions; no sample values are inserted.</span></div>',unsafe_allow_html=True)
+    st.markdown("### Recent activity")
+    if st.session_state.history:
+        hist=pd.DataFrame(st.session_state.history); st.dataframe(hist,use_container_width=True,hide_index=True)
+        st.download_button("Export activity history CSV",hist.to_csv(index=False).encode(),"shelfaugment_activity.csv","text/csv")
+    else: st.info("Recent processing activity will appear here.")
+    st.markdown("### Workflow")
+    cols=st.columns(4)
+    for col,n,t,d in zip(cols,["01","02","03","04"],["Upload","Augment","Validate","Export"],["Add shelf images and labels.","Apply controlled transformations.","Check classes and box coordinates.","Download datasets and TF input files."]):
+        with col: st.markdown(f'<div class="metriccard"><div class="kicker">{n}</div><b>{t}</b><p style="font-size:12px;color:#526D82">{d}</p></div>',unsafe_allow_html=True)
+
+elif page=="Image Studio":
+    st.markdown('<div class="kicker">SINGLE IMAGE WORKFLOW</div>',unsafe_allow_html=True); st.title("Image studio")
+    st.write("Apply a controlled transformation while keeping YOLO annotations aligned.")
+    left,right=st.columns([.95,1.05],gap="large")
+    with left:
+        image=st.file_uploader("Shelf image",["jpg","jpeg","png"],key="single_image")
+        label=st.file_uploader("YOLO annotation (optional)",["txt"],key="single_label")
+        mode=st.selectbox("Augmentation method",["Lighting","Camera angle","Perspective","Combined"])
+        with st.expander("Transformation parameters",expanded=True):
+            bright=st.slider("Brightness strength",0.,.5,.20,.01); contrast=st.slider("Contrast strength",0.,.5,.20,.01)
+            angle=st.slider("Maximum rotation",0,15,5,1,format="%d°"); scale=st.slider("Scale variation",0.,.25,.05,.01)
+            persp=st.slider("Maximum perspective strength",.02,.10,.05,.01)
+        run=st.button("Generate augmented image",type="primary",use_container_width=True,disabled=image is None)
+    if image:
         try:
-            with tempfile.TemporaryDirectory() as tmp:
-                root = Path(tmp)
-                with zipfile.ZipFile(batch_zip) as zf:
-                    for member in zf.infolist():
-                        target = (root / member.filename).resolve()
-                        if not str(target).startswith(str(root.resolve()) + os.sep):
-                            raise ValueError("Unsafe path detected in uploaded ZIP.")
-                    zf.extractall(root)
-                image_dir = root / "images"
-                label_dir = root / "labels"
-                if not image_dir.exists():
-                    raise ValueError("ZIP must contain an images/ directory at its root.")
-                image_paths = sorted([p for p in image_dir.rglob("*") if p.suffix.lower() in [".jpg",".jpeg",".png"]])
-                if not image_paths:
-                    raise ValueError("No JPG, JPEG or PNG images found.")
-                output = root / "shelfaugment_output"
-                rows = []
-                progress = st.progress(0)
-                for idx, img_path in enumerate(image_paths):
-                    image = np.array(Image.open(img_path).convert("RGB"))
-                    label_path = label_dir / (img_path.stem + ".txt")
-                    label_text = label_path.read_text(encoding="utf-8") if label_path.exists() else ""
-                    boxes, labels = parse_yolo(label_text)
-                    for method in batch_modes:
-                        method_name = {"lighting":"Lighting","camera_angle":"Camera angle",
-                                       "perspective":"Perspective","combined":"Combined"}[method]
-                        aug_img, aug_boxes, aug_labels = apply_augmentation(
-                            image, boxes, labels, method_name,
-                            batch_brightness, batch_brightness, batch_angle, 0.05, 0.04
-                        )
-                        out_img_dir = output / method / "images"
-                        out_lbl_dir = output / method / "labels"
-                        out_img_dir.mkdir(parents=True, exist_ok=True)
-                        out_lbl_dir.mkdir(parents=True, exist_ok=True)
-                        out_name = f"{img_path.stem}_{method}"
-                        Image.fromarray(aug_img).save(out_img_dir / f"{out_name}.jpg", quality=95)
-                        (out_lbl_dir / f"{out_name}.txt").write_text(
-                            encode_yolo(aug_boxes,aug_labels), encoding="utf-8"
-                        )
-                        rows.append({"source_image":img_path.name,"augmentation":method,
-                                     "original_boxes":len(boxes),"generated_boxes":len(aug_boxes),
-                                     "image":f"{method}/images/{out_name}.jpg",
-                                     "label":f"{method}/labels/{out_name}.txt"})
-                    progress.progress((idx+1)/len(image_paths))
-                pd.DataFrame(rows).to_csv(output / "augmentation_metadata.csv", index=False)
-                zip_buffer = io.BytesIO()
-                with zipfile.ZipFile(zip_buffer,"w",zipfile.ZIP_DEFLATED) as outzip:
-                    for file in output.rglob("*"):
-                        if file.is_file():
-                            outzip.write(file, file.relative_to(output))
-                st.success(f"Processed {len(image_paths)} images and generated {len(rows)} augmented samples.")
-                st.download_button("Download augmented dataset ZIP", zip_buffer.getvalue(),
-                    file_name="ShelfAugment_AI_batch_output.zip", mime="application/zip")
-                st.dataframe(pd.DataFrame(rows).head(20), use_container_width=True)
-        except Exception as e:
-            st.error(f"Batch processing failed: {e}")
+            im=decode(image); txt=label.getvalue().decode() if label else ""; boxes,labels=parse_yolo(txt)
+            with right: st.markdown("#### Original image"); st.image(draw(im,boxes,labels),use_container_width=True); st.caption(f"{im.shape[1]} × {im.shape[0]} px · {len(boxes)} annotated objects")
+            if run:
+                aug,nb,nl=transform(im,boxes,labels,mode,bright,contrast,angle,scale,persp)
+                st.session_state.single_result={"image":png(aug),"labels":encode(nb,nl),"mode":mode,"original":len(boxes),"generated":len(nb),"filename":Path(image.name).stem}
+                st.session_state.images_processed+=1; st.session_state.augmented_samples+=1; st.session_state.original_boxes+=len(boxes); st.session_state.generated_boxes+=len(nb); st.session_state.method_counts[mode.lower().replace(" ","_")]+=1
+                add_event({"Time":datetime.now().strftime("%Y-%m-%d %H:%M:%S"),"Operation":"Single image","Method":mode,"Images":1,"Samples":1,"Boxes":f"{len(boxes)} → {len(nb)}"})
+            if st.session_state.single_result:
+                r=st.session_state.single_result; st.markdown("#### Latest result"); a,b=st.columns([1.5,1])
+                with a: st.image(r["image"],caption=r["mode"]+" result",use_container_width=True)
+                with b:
+                    st.metric("Original boxes",r["original"]); st.metric("Retained boxes",r["generated"]); st.metric("Filtered boxes",max(0,r["original"]-r["generated"]))
+                    st.download_button("Download augmented image",r["image"],r["filename"]+"_augmented.png","image/png",use_container_width=True)
+                    st.download_button("Download updated YOLO labels",r["labels"],r["filename"]+"_augmented.txt","text/plain",use_container_width=True)
+        except Exception as e: st.error(f"Unable to process image: {e}")
+    else: st.markdown('<div class="softnote">YOLO labels are optional. Without labels, images can be transformed but object boxes cannot be measured or exported.</div>',unsafe_allow_html=True)
 
-with tabs[3]:
-    st.subheader("About ShelfAugment AI")
-    st.markdown("""
-**Purpose:** create controlled retail shelf-image variations to help build more robust
-planogram-compliance training datasets.
+elif page=="Batch Processing":
+    st.markdown('<div class="kicker">MULTI-IMAGE WORKFLOW</div>',unsafe_allow_html=True); st.title("Batch processing")
+    st.write("Create augmented datasets with updated labels, metadata and input annotation checks.")
+    st.markdown('<div class="softnote">ZIP must contain images/ at its root and an optional labels/ folder. Matching basenames are paired automatically.</div>',unsafe_allow_html=True)
+    upload=st.file_uploader("Dataset ZIP",["zip"],key="batch_upload")
+    selected=st.multiselect("Augmentation methods",list(METHODS),default=list(METHODS),format_func=lambda x:METHODS[x])
+    a,b,c=st.columns(3)
+    with a: bright=st.slider("Brightness / contrast",0.,.5,.15,.01)
+    with b: angle=st.slider("Maximum rotation",0,15,5,1,format="%d°")
+    with c: persp=st.slider("Perspective strength",.02,.10,.04,.01)
+    run=st.button("Process dataset",type="primary",disabled=upload is None or not selected,use_container_width=True)
+    if run and upload:
+        try:
+            with tempfile.TemporaryDirectory() as td:
+                root=Path(td); safe_extract(upload,root); idir=root/"images"; ldir=root/"labels"
+                if not idir.exists(): raise ValueError("ZIP must contain images/ at its root.")
+                paths=image_paths(idir)
+                if not paths: raise ValueError("No JPG, JPEG or PNG images found.")
+                if len(paths)>1500: raise ValueError("Maximum 1,500 images per batch. Split larger ZIP files.")
+                out=root/"output"; out.mkdir(); rows=[]; qa=[]; progress=st.progress(0)
+                for i,p in enumerate(paths):
+                    im=np.array(Image.open(p).convert("RGB")); lp=ldir/(p.stem+".txt"); txt=lp.read_text(encoding="utf-8") if lp.exists() else ""
+                    q=validate(txt); qa.append({"image":p.name,"label_found":lp.exists(),**q}); boxes,labels=parse_yolo(txt)
+                    for m in selected:
+                        aug,nb,nl=transform(im,boxes,labels,METHODS[m],bright,bright,angle,.05,persp)
+                        oi=out/m/"images"; ol=out/m/"labels"; oi.mkdir(parents=True,exist_ok=True); ol.mkdir(parents=True,exist_ok=True)
+                        name=p.stem+"_"+m; Image.fromarray(aug).save(oi/(name+".jpg"),quality=95); (ol/(name+".txt")).write_text(encode(nb,nl))
+                        rows.append({"source_image":p.name,"augmentation":m,"original_boxes":len(boxes),"generated_boxes":len(nb),"image":f"{m}/images/{name}.jpg","label":f"{m}/labels/{name}.txt"})
+                    progress.progress((i+1)/len(paths))
+                df=pd.DataFrame(rows); df.to_csv(out/"augmentation_metadata.csv",index=False); pd.DataFrame(qa).to_csv(out/"annotation_validation.csv",index=False)
+                invalid=sum(q["malformed_rows"]+q["invalid_class_ids"]+q["invalid_coordinates"] for q in qa)
+                report={"created_at":datetime.now().isoformat(timespec="seconds"),"original_images":len(paths),"methods":selected,"augmented_samples":len(rows),"original_boxes":int(df.original_boxes.sum()),"generated_boxes":int(df.generated_boxes.sum()),"invalid_input_rows":invalid,"images_without_labels":sum(not q["label_found"] for q in qa)}
+                (out/"batch_report.json").write_text(json.dumps(report,indent=2))
+                zbuf=io.BytesIO()
+                with zipfile.ZipFile(zbuf,"w",zipfile.ZIP_DEFLATED) as z:
+                    for p in out.rglob("*"):
+                        if p.is_file(): z.write(p,p.relative_to(out))
+                st.session_state.batch_df=df; st.session_state.batch_zip=zbuf.getvalue(); st.session_state.batch_report=report
+                st.session_state.images_processed+=len(paths); st.session_state.augmented_samples+=len(rows); st.session_state.batch_runs+=1; st.session_state.original_boxes+=report["original_boxes"]; st.session_state.generated_boxes+=report["generated_boxes"]
+                for m in selected: st.session_state.method_counts[m]+=len(paths)
+                add_event({"Time":datetime.now().strftime("%Y-%m-%d %H:%M:%S"),"Operation":"Batch","Method":", ".join(METHODS[m] for m in selected),"Images":len(paths),"Samples":len(rows),"Boxes":f'{report["original_boxes"]} → {report["generated_boxes"]}'})
+                st.success(f'Processed {len(paths)} images and generated {len(rows)} augmented samples.')
+        except Exception as e: st.error(f"Batch processing failed: {e}")
+    if st.session_state.batch_report:
+        r=st.session_state.batch_report; st.markdown("### Latest batch summary")
+        a,b,c,d=st.columns(4); a.metric("Images processed",r["original_images"]); b.metric("Augmented samples",r["augmented_samples"]); c.metric("Original boxes",r["original_boxes"]); d.metric("Generated boxes",r["generated_boxes"])
+        st.download_button("Download augmented dataset ZIP",st.session_state.batch_zip,"ShelfAugment_AI_batch_output.zip","application/zip",use_container_width=True)
+        st.download_button("Download metadata CSV",st.session_state.batch_df.to_csv(index=False).encode(),"augmentation_metadata.csv","text/csv")
+        st.markdown("#### Augmentation metadata"); st.dataframe(st.session_state.batch_df,use_container_width=True,hide_index=True)
+        st.caption(f'Invalid input annotation rows: {r["invalid_input_rows"]} · Images without labels: {r["images_without_labels"]}')
 
-**Dataset classes used in the notebook**
-""")
-    st.table(pd.DataFrame({"Class ID":range(len(CLASS_NAMES)), "Product":CLASS_NAMES}))
-    st.markdown("""
-**Annotation behavior**
-- YOLO labels use `class_id x_center y_center width height`, normalized to 0–1.
-- Lighting-only transforms preserve the original boxes.
-- Geometric transforms update boxes and filter boxes with insufficient visibility.
-- If no annotation file is supplied, the app still transforms the image but cannot preserve or export object labels.
-""")
-    st.caption("ShelfAugment AI · Streamlit prototype")
+elif page=="Dataset QA & TensorFlow":
+    st.markdown('<div class="kicker">DATASET QUALITY & MODEL INPUT PREPARATION</div>',unsafe_allow_html=True); st.title("Dataset QA & TensorFlow export")
+    st.write("Validate original YOLO annotations and prepare a leakage-aware TensorFlow input package.")
+    st.markdown("### 1 · Original dataset quality check")
+    qa=st.file_uploader("Original YOLO dataset ZIP",["zip"],key="qa_original")
+    if st.button("Validate original dataset",disabled=qa is None):
+        try:
+            with tempfile.TemporaryDirectory() as td:
+                root=Path(td); safe_extract(qa,root); req=[root/"images"/"train",root/"images"/"test",root/"labels"/"train",root/"labels"/"test"]
+                if not all(p.exists() for p in req): raise ValueError("Expected images/train, images/test, labels/train and labels/test.")
+                rows=[]
+                for split in ("train","test"):
+                    for im in image_paths(root/"images"/split):
+                        lp=root/"labels"/split/(im.stem+".txt"); txt=lp.read_text() if lp.exists() else ""
+                        rows.append({"split":split,"image":im.name,"label_found":lp.exists(),**validate(txt)})
+                st.session_state.qa_df=pd.DataFrame(rows)
+        except Exception as e: st.error(f"Validation failed: {e}")
+    if st.session_state.qa_df is not None:
+        q=st.session_state.qa_df; invalid=int(q[["malformed_rows","invalid_class_ids","invalid_coordinates"]].sum().sum())
+        a,b,c,d=st.columns(4); a.metric("Images scanned",len(q)); b.metric("Labels found",int(q.label_found.sum())); c.metric("Valid rows",int(q.valid_rows.sum())); d.metric("Invalid rows",invalid)
+        st.dataframe(q,use_container_width=True,hide_index=True); st.download_button("Download QA report CSV",q.to_csv(index=False).encode(),"dataset_quality_report.csv","text/csv")
+    st.divider(); st.markdown("### 2 · TensorFlow dataset preparation")
+    st.write("Original training images are split by identity. Validation and test remain original-only; augmented samples are added to training only.")
+    orig=st.file_uploader("Original dataset ZIP (images/train, images/test, labels/train, labels/test)",["zip"],key="tf_original")
+    aug=st.file_uploader("Augmented ZIP from Batch Processing (optional)",["zip"],key="tf_augmented")
+    a,b=st.columns(2)
+    with a: valfrac=st.slider("Validation fraction",.10,.30,.20,.05)
+    with b: seed=st.number_input("Random seed",0,99999,42)
+    if st.button("Prepare TensorFlow export package",type="primary",disabled=orig is None):
+        try:
+            with tempfile.TemporaryDirectory() as td:
+                root=Path(td); src=root/"src"; src.mkdir(); safe_extract(orig,src)
+                req=[src/"images"/"train",src/"images"/"test",src/"labels"/"train",src/"labels"/"test"]
+                if not all(p.exists() for p in req): raise ValueError("Original ZIP must contain images/train, images/test, labels/train and labels/test.")
+                train=image_paths(src/"images"/"train"); test=image_paths(src/"images"/"test")
+                if not train or not test: raise ValueError("Train and test folders both need images.")
+                rng=random.Random(int(seed)); sh=train.copy(); rng.shuffle(sh); nv=max(1,round(len(train)*valfrac)) if len(train)>1 else 0
+                valstems={p.stem for p in sh[:nv]}; trainstems={p.stem for p in train}-valstems
+                out=root/"tensorflow_dataset"
+                for s in ("train","val","test"): (out/s/"images").mkdir(parents=True); (out/s/"labels").mkdir()
+                def cp(im,split,ls,prefix):
+                    name=prefix+im.name; shutil.copy2(im,out/split/"images"/name); lp=src/"labels"/ls/(im.stem+".txt")
+                    if lp.exists(): shutil.copy2(lp,out/split/"labels"/(Path(name).stem+".txt"))
+                    else: (out/split/"labels"/(Path(name).stem+".txt")).write_text("")
+                for im in train: cp(im,"val" if im.stem in valstems else "train","train","original_")
+                for im in test: cp(im,"test","test","test_")
+                added=0
+                if aug:
+                    ar=root/"aug"; ar.mkdir(); safe_extract(aug,ar); mp=ar/"augmentation_metadata.csv"
+                    if not mp.exists(): raise ValueError("Augmented ZIP needs augmentation_metadata.csv.")
+                    df=pd.read_csv(mp)
+                    if not {"source_image","image","label"}.issubset(df.columns): raise ValueError("Metadata missing source_image, image or label.")
+                    for _,row in df.iterrows():
+                        if Path(str(row.source_image)).stem not in trainstems: continue
+                        ip=ar/str(row.image); lp=ar/str(row.label)
+                        if not ip.exists(): continue
+                        name="aug_"+Path(str(row.image)).parts[0]+"_"+ip.name; shutil.copy2(ip,out/"train"/"images"/name)
+                        if lp.exists(): shutil.copy2(lp,out/"train"/"labels"/(Path(name).stem+".txt"))
+                        else: (out/"train"/"labels"/(Path(name).stem+".txt")).write_text("")
+                        added+=1
+                counts={s:{"images":len(image_paths(out/s/"images")),"labels":len(list((out/s/"labels").glob("*.txt")))} for s in ("train","val","test")}
+                report={"framework":"TensorFlow","image_size":640,"batch_size":8,"normalization":"RGB / 255.0","annotation_format":"YOLO","seed":int(seed),"validation_fraction":valfrac,"augmented_samples_added_to_train":added,"splits":counts,"leakage_control":"Validation and test contain original images only; augmented samples are added to training only."}
+                (out/"tensorflow_integration_report.json").write_text(json.dumps(report,indent=2))
+                (out/"tensorflow_input_pipeline.py").write_text(make_tf_source())
+                (out/"README_TENSORFLOW.md").write_text("Install tensorflow, opencv-python-headless and numpy in Kaggle/Colab. Run python tensorflow_input_pipeline.py. Images are letterboxed to 640x640 RGB and normalized to 0-1. YOLO boxes are [class_id, x_center, y_center, width, height]. Padded rows use -1. This prepares input datasets; it does not train a detector.")
+                zbuf=io.BytesIO()
+                with zipfile.ZipFile(zbuf,"w",zipfile.ZIP_DEFLATED) as z:
+                    for p in out.rglob("*"):
+                        if p.is_file(): z.write(p,p.relative_to(out))
+                st.session_state.tf_zip=zbuf.getvalue(); st.session_state.tf_report=report; st.success("TensorFlow preparation package created.")
+        except Exception as e: st.error(f"TensorFlow export failed: {e}")
+    if st.session_state.tf_report:
+        r=st.session_state.tf_report; a,b,c,d=st.columns(4)
+        a.metric("Training images",r["splits"]["train"]["images"]); b.metric("Validation images",r["splits"]["val"]["images"]); c.metric("Test images",r["splits"]["test"]["images"]); d.metric("Augmented train samples",r["augmented_samples_added_to_train"])
+        st.info(r["leakage_control"]); st.download_button("Download TensorFlow dataset package",st.session_state.tf_zip,"ShelfAugment_AI_TensorFlow_Dataset.zip","application/zip",use_container_width=True)
+        st.download_button("Download TensorFlow report JSON",json.dumps(r,indent=2),"tensorflow_integration_report.json","application/json")
+
+else:
+    st.markdown('<div class="kicker">PROJECT DOCUMENTATION</div>',unsafe_allow_html=True); st.title("Project guide")
+    st.write("ShelfAugment AI creates controlled retail shelf-image variations and corresponding YOLO annotations for downstream model development.")
+    st.markdown("### Product class mapping"); st.dataframe(pd.DataFrame({"Class ID":range(6),"Product":CLASSES}),use_container_width=True,hide_index=True)
+    st.markdown("### Transformation methods"); st.dataframe(pd.DataFrame([["Lighting","Brightness, contrast and gamma","Original boxes retained"],["Camera angle","Affine rotation and scale","YOLO boxes transformed"],["Perspective","Viewpoint variation","Boxes transformed and visibility-filtered"],["Combined","Geometry and lighting","YOLO boxes transformed"]],columns=["Method","Operation","Annotation handling"]),use_container_width=True,hide_index=True)
+    st.markdown("### Annotation format"); st.code("class_id x_center y_center width height")
+    st.write("Coordinates are normalized to 0–1. Geometric transformations update box coordinates and filter low-visibility boxes.")
+    st.markdown("### TensorFlow preparation"); st.write("The export kit prepares 640 × 640 RGB letterboxed images, normalized pixels, YOLO box arrays and padded tf.data batches. It does not train or evaluate a detector.")
+    st.info("Planogram-compliance scoring and object-detector training are downstream tasks outside the current application's scope.")
