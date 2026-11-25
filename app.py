@@ -15,80 +15,56 @@ EXTS = {".jpg", ".jpeg", ".png"}
 METHODS = {"lighting":"Lighting", "camera_angle":"Camera angle", "perspective":"Perspective", "combined":"Combined"}
 st.set_page_config(page_title="ShelfAugment AI", page_icon="🛒", layout="wide")
 
-CSS = (
-'<style>'
-':root{color-scheme:light;--navy:#27374D;--blue:#526D82;--steel:#9DB2BF;--pale:#DDE6ED;--paper:#F7FAFC;--line:#C4D1DB;--ink:#27374D;--muted:#526D82}'
-'.stApp{background:var(--pale);color:var(--ink)}'
-'[data-testid="stHeader"]{background:rgba(221,230,237,.98);height:3.6rem;z-index:1000;border-bottom:1px solid #C4D1DB}'
-'[data-testid="stToolbar"]{top:.35rem;right:.75rem;z-index:1100}'
-'[data-testid="stToolbar"] button{background:#DDE6ED!important;border:1px solid #9DB2BF!important;border-radius:9px!important;color:#27374D!important;box-shadow:0 1px 3px rgba(39,55,77,.10)!important;margin-left:5px!important}'
-'[data-testid="stToolbar"] button:hover{background:#9DB2BF!important;border-color:#526D82!important;color:#27374D!important}'
-'[data-testid="stToolbar"] button svg{color:#526D82!important;fill:none!important;stroke:#526D82!important}'
-'[data-testid="stToolbar"] button:hover svg{color:#27374D!important;stroke:#27374D!important}'
-'[data-testid="stToolbar"] [data-testid="stToolbarActionButton"]{background:#DDE6ED!important;border-radius:9px!important}'
-'[data-testid="stAppViewContainer"]>.main{padding-top:.2rem}'
-'[data-testid="stSidebar"]{background:#DDE6ED;border-right:1px solid #9DB2BF}'
-'[data-testid="stSidebar"] *{color:#27374D!important}'
-'[data-testid="stSidebar"] [data-testid="stRadio"] label{font-size:14px!important;font-weight:500!important}'
-'.block-container{padding-top:4.1rem;padding-bottom:3rem;max-width:1480px}'
-'h1,h2,h3,h4{color:#27374D!important;letter-spacing:-.02em}'
-'p,li,span,small{color:inherit}'
-'.brand{display:flex;align-items:center;gap:14px;padding:18px 22px;background:#27374D;border-radius:17px;color:#F7FAFC;margin-bottom:20px}'
-'.brandmark{width:46px;height:46px;display:grid;place-items:center;border-radius:13px;background:#9DB2BF;color:#27374D;font-size:25px}'
-'.brandtitle{font-size:25px;font-weight:750;color:#F7FAFC;line-height:1.15}.brandsub{font-size:11px;color:#DDE6ED;letter-spacing:.12em;text-transform:uppercase;margin-top:5px}'
-'.kicker{font-size:11px;color:#526D82;font-weight:750;letter-spacing:.13em;text-transform:uppercase}'
-'.metriccard{background:#F7FAFC;border:1px solid #C4D1DB;border-radius:14px;padding:17px;min-height:108px;color:#27374D}'
-'.metriclabel{font-size:13px;color:#526D82;font-weight:700;line-height:1.35;white-space:normal;overflow-wrap:anywhere}.metricvalue{font-size:29px;color:#27374D;font-weight:750;margin-top:7px}'
-'.metricnote{font-size:11px;color:#526D82;margin-top:6px}.panel{background:#F7FAFC;border:1px solid #C4D1DB;border-radius:15px;padding:17px 19px;margin:8px 0 15px;color:#27374D}'
-'.softnote{background:#F7FAFC;border:1px solid #C4D1DB;border-left:4px solid #526D82;border-radius:9px;padding:12px 15px;color:#27374D;font-size:13px}'
-'div.stButton>button,div.stDownloadButton>button{background:#526D82!important;color:#FFFFFF!important;border:1px solid #526D82!important;border-radius:10px;font-weight:650;min-height:42px}'
-'div.stButton>button:hover,div.stDownloadButton>button:hover{background:#27374D!important;color:#FFFFFF!important;border-color:#27374D!important}'
-'div.stButton>button:disabled{background:#E7EDF2!important;color:#687D8D!important;border-color:#C4D1DB!important}'
-'div.stButton>button[kind="secondary"]{background:#F7FAFC!important;color:#27374D!important;border-color:#9DB2BF!important}'
-'[data-testid="stWidgetLabel"],[data-testid="stWidgetLabel"] p,label{color:#27374D!important;font-weight:600!important}'
-'[data-testid="stCaptionContainer"],[data-testid="stCaptionContainer"] *{color:#526D82!important}'
-'[data-testid="stFileUploader"]{background:#F7FAFC!important;border:1px dashed #9DB2BF!important;border-radius:12px;padding:9px;color:#27374D!important}'
-'[data-testid="stFileUploader"] [data-testid="stFileUploaderDropzone"]{background:#F7FAFC!important;color:#27374D!important}'
-'[data-testid="stFileUploader"] [data-testid="stFileUploaderDropzone"] *{color:#27374D!important;-webkit-text-fill-color:#27374D!important}'
-'[data-testid="stFileUploader"] [data-testid="stFileUploaderDropzone"] button{background:#E7EEF3!important;color:#27374D!important;border:1px solid #9DB2BF!important}'
-'[data-testid="stFileUploader"] [data-testid="stFileUploaderFile"]{background:#171717!important;background-color:#171717!important;color:#FFFFFF!important;border:1px solid #171717!important;border-radius:10px!important;padding:8px 10px!important}'
-'[data-testid="stFileUploader"] [data-testid="stFileUploaderFile"] *{color:#FFFFFF!important;-webkit-text-fill-color:#FFFFFF!important;opacity:1!important}'
-'[data-testid="stFileUploader"] [data-testid="stFileUploaderFile"] svg{color:#FFFFFF!important;fill:none!important;stroke:#FFFFFF!important}'
-'[data-testid="stFileUploader"] [data-testid="stFileUploaderFile"] button{background:#526D82!important;background-color:#526D82!important;color:#FFFFFF!important;border:1px solid #9DB2BF!important;border-radius:50%!important}'
-'[data-testid="stFileUploader"] small{color:#27374D!important;-webkit-text-fill-color:#27374D!important;font-weight:600!important}'
-'[data-testid="stSelectbox"] div[data-baseweb="select"]>div,[data-testid="stMultiSelect"] div[data-baseweb="select"]>div{background:#F7FAFC!important;color:#27374D!important;border-color:#9DB2BF!important}'
-'[data-testid="stSelectbox"] *,[data-testid="stMultiSelect"] *{color:#27374D!important;font-weight:600}'
-'[role="listbox"],[role="option"]{background:#F7FAFC!important;color:#27374D!important}'
-'[data-testid="stTextInput"] input,[data-testid="stNumberInput"] input,[data-testid="stTextArea"] textarea{background:#F7FAFC!important;color:#27374D!important;border-color:#9DB2BF!important}'
-'[data-testid="stSlider"] [data-testid="stTickBar"]{background:#9DB2BF}'
-'[data-testid="stSlider"] [data-testid="stThumbValue"]{color:#27374D!important}'
-'[data-testid="stMetric"]{background:#F7FAFC;border:1px solid #C4D1DB;border-radius:12px;padding:12px}'
-'[data-testid="stMetric"] label,[data-testid="stMetric"] [data-testid="stMetricLabel"]{color:#526D82!important}'
-'[data-testid="stMetric"] [data-testid="stMetricValue"]{color:#27374D!important}'
-'[data-testid="stDataFrame"],[data-testid="stTable"]{background:#F7FAFC;border:1px solid #C4D1DB;border-radius:11px;overflow:hidden}'
-'[data-testid="stDataFrame"] *{color:#27374D}'
-'[data-testid="stExpander"]{background:#F7FAFC;border:1px solid #C4D1DB;border-radius:11px}'
-'[data-testid="stExpander"] summary,[data-testid="stExpander"] summary *{color:#27374D!important;font-weight:600}'
-'[data-testid="stAlert"]{color:#27374D}'
-'hr{border-color:#9DB2BF!important}footer,#MainMenu{visibility:hidden}'
-'@media(max-width:900px){.block-container{padding-left:1rem;padding-right:1rem}.brand{padding:14px;flex-wrap:wrap}.brandtitle{font-size:21px}.brandsub{font-size:9px}.metriccard{min-height:96px;padding:12px}.metricvalue{font-size:25px}}'
-
-'[data-testid="stFileUploader"]{background:#F7FAFC!important;border:1px dashed #9DB2BF!important;border-radius:14px!important;padding:10px!important}'
-'[data-testid="stFileUploader"] [data-testid="stFileUploaderDropzone"]{background:#F7FAFC!important;background-color:#F7FAFC!important;border:1px solid #C4D1DB!important;border-radius:10px!important}'
-'[data-testid="stFileUploader"] [data-testid="stFileUploaderDropzone"] *{color:#27374D!important;-webkit-text-fill-color:#27374D!important}'
-'[data-testid="stFileUploader"] [data-testid="stFileUploaderDropzone"] button{background:#E7EEF3!important;background-color:#E7EEF3!important;color:#27374D!important;border:1px solid #9DB2BF!important}'
-'[data-testid="stFileUploader"] [data-testid="stFileUploaderFile"]{background:#171717!important;background-color:#171717!important;border:1px solid #171717!important;border-radius:11px!important}'
-'[data-testid="stFileUploader"] [data-testid="stFileUploaderFile"] div,[data-testid="stFileUploader"] [data-testid="stFileUploaderFile"] p,[data-testid="stFileUploader"] [data-testid="stFileUploaderFile"] span,[data-testid="stFileUploader"] [data-testid="stFileUploaderFile"] a,[data-testid="stFileUploader"] [data-testid="stFileUploaderFile"] small,[data-testid="stFileUploader"] [data-testid="stFileUploaderFile"] [title]{color:#FFFFFF!important;-webkit-text-fill-color:#FFFFFF!important;opacity:1!important}'
-'[data-testid="stFileUploader"] [data-testid="stFileUploaderFile"] svg{color:#FFFFFF!important;stroke:#FFFFFF!important}'
-'[data-testid="stFileUploader"] [data-testid="stFileUploaderFile"] button{background:#526D82!important;background-color:#526D82!important;color:#FFFFFF!important;border:1px solid #9DB2BF!important;border-radius:50%!important}'
-'[data-testid="stSelectbox"] div[data-baseweb="select"]>div,[data-testid="stMultiSelect"] div[data-baseweb="select"]>div{background:#F7FAFC!important;background-color:#F7FAFC!important;color:#27374D!important;border:1px solid #9DB2BF!important}'
-'[data-testid="stSelectbox"] div[data-baseweb="select"] *,[data-testid="stMultiSelect"] div[data-baseweb="select"] *{color:#27374D!important;-webkit-text-fill-color:#27374D!important}'
-'[role="listbox"],[role="option"]{background:#F7FAFC!important;color:#27374D!important}'
-
-'\n/* Reference-matched Image Studio controls */\n[data-testid="stFileUploader"]{\n  background:#F7FAFC!important;\n  border:1px dashed #B8D0E4!important;\n  border-radius:18px!important;\n  padding:14px!important;\n  color:#27374D!important;\n}\n[data-testid="stFileUploader"] [data-testid="stFileUploaderDropzone"]{\n  background:#F7FAFC!important;\n  border:1px solid #C4D8EA!important;\n  border-radius:15px!important;\n  min-height:86px!important;\n  padding:12px 16px!important;\n}\n[data-testid="stFileUploader"] [data-testid="stFileUploaderDropzone"] *{\n  color:#27374D!important;\n  -webkit-text-fill-color:#27374D!important;\n}\n[data-testid="stFileUploader"] [data-testid="stFileUploaderDropzone"] button{\n  background:#E5F0F8!important;\n  color:#27374D!important;\n  border:1px solid #AFCBE2!important;\n  border-radius:13px!important;\n}\n[data-testid="stFileUploader"] [data-testid="stFileUploaderFile"]{\n  width:calc(100% - 4px)!important;\n  max-width:100%!important;\n  box-sizing:border-box!important;\n  background:#080808!important;\n  background-color:#080808!important;\n  border:1px solid #080808!important;\n  border-radius:16px!important;\n  padding:10px 14px!important;\n  min-height:76px!important;\n  color:#FFFFFF!important;\n}\n[data-testid="stFileUploader"] [data-testid="stFileUploaderFile"] *{\n  color:#FFFFFF!important;\n  -webkit-text-fill-color:#FFFFFF!important;\n  opacity:1!important;\n}\n[data-testid="stFileUploader"] [data-testid="stFileUploaderFile"] svg{\n  color:#FFFFFF!important;\n  stroke:#FFFFFF!important;\n}\n[data-testid="stFileUploader"] [data-testid="stFileUploaderFile"] button{\n  background:#080808!important;\n  color:#FFFFFF!important;\n  border:1px solid #DDE6ED!important;\n  border-radius:50%!important;\n}\n[data-testid="stFileUploader"] small{\n  color:#526D82!important;\n  -webkit-text-fill-color:#526D82!important;\n}\n\n/* Light select and multiselect controls, including BaseWeb internals */\n[data-testid="stSelectbox"] [data-baseweb="select"] > div,\n[data-testid="stMultiSelect"] [data-baseweb="select"] > div,\ndiv[data-baseweb="select"] > div{\n  background:#F7FAFC!important;\n  background-color:#F7FAFC!important;\n  color:#27374D!important;\n  border:1px solid #B8D0E4!important;\n  border-radius:12px!important;\n  box-shadow:0 1px 3px rgba(39,55,77,.06)!important;\n}\n[data-testid="stSelectbox"] [data-baseweb="select"] *,\n[data-testid="stMultiSelect"] [data-baseweb="select"] *,\ndiv[data-baseweb="select"] *{\n  color:#27374D!important;\n  -webkit-text-fill-color:#27374D!important;\n}\n[data-baseweb="popover"],[data-baseweb="menu"],[role="listbox"],[role="option"]{\n  background:#F7FAFC!important;\n  color:#27374D!important;\n}\n[role="option"]:hover,[role="option"][aria-selected="true"]{\n  background:#E4EFF8!important;\n  color:#27374D!important;\n}\n\n/* Soft blue parameter accordion like the supplied reference */\n[data-testid="stExpander"]{\n  background:#F7FAFC!important;\n  border:1px solid #B8D0E4!important;\n  border-radius:16px!important;\n  overflow:hidden!important;\n}\n[data-testid="stExpander"] summary{\n  background:linear-gradient(105deg,#D7E8F7 0%,#E7F1F9 100%)!important;\n  padding:17px 20px!important;\n}\n[data-testid="stExpander"] summary,\n[data-testid="stExpander"] summary *,\n[data-testid="stExpander"] summary svg{\n  color:#27374D!important;\n  fill:#27374D!important;\n  stroke:#27374D!important;\n  font-weight:700!important;\n}\n[data-testid="stExpander"] [data-testid="stExpanderDetails"]{\n  background:#F7FAFC!important;\n  padding:20px!important;\n}\n[data-testid="stExpander"] [data-testid="stSlider"] label,\n[data-testid="stExpander"] [data-testid="stSlider"] label *{\n  color:#27374D!important;\n}\n\n/* More legible labels and the selected-file caption */\n[data-testid="stWidgetLabel"],[data-testid="stWidgetLabel"] *,\n[data-testid="stCaptionContainer"],[data-testid="stCaptionContainer"] *{\n  color:#27374D!important;\n}\n[data-testid="stCaptionContainer"]{\n  font-size:15px!important;\n}\n[data-testid="stSlider"] [data-testid="stThumbValue"]{\n  color:#D9485A!important;\n}\n'
-'\n/* Explicitly target Streamlit\'s uploaded-file name node */\n[data-testid="stFileUploaderFileName"],\n[data-testid="stFileUploaderFileName"] *,\n[data-testid="stFileUploaderFile"] [data-testid="stMarkdownContainer"],\n[data-testid="stFileUploaderFile"] [data-testid="stMarkdownContainer"] *,\n[data-testid="stFileUploaderFile"] [class*="fileName"],\n[data-testid="stFileUploaderFile"] [class*="filename"],\n[data-testid="stFileUploaderFile"] [class*="file-name"],\n[data-testid="stFileUploaderFile"] p,\n[data-testid="stFileUploaderFile"] span,\n[data-testid="stFileUploaderFile"] small,\n[data-testid="stFileUploaderFile"] a,\n[data-testid="stFileUploaderFile"] div {\n  color: #FFFFFF !important;\n  -webkit-text-fill-color: #FFFFFF !important;\n  opacity: 1 !important;\n  text-shadow: none !important;\n}\n[data-testid="stFileUploaderFile"] {\n  background: #080808 !important;\n  background-color: #080808 !important;\n  color: #FFFFFF !important;\n  -webkit-text-fill-color: #FFFFFF !important;\n}\n[data-testid="stFileUploaderFile"] button,\n[data-testid="stFileUploaderFile"] button * {\n  background: #526D82 !important;\n  background-color: #526D82 !important;\n  color: #FFFFFF !important;\n  -webkit-text-fill-color: #FFFFFF !important;\n  border-color: #DDE6ED !important;\n}\n'
-'</style>'
-)
+CSS = r"""<style>
+:root{color-scheme:light;--navy:#172F5B;--blue:#2D67A1;--sky:#D9EAF9;--pale:#EAF3FB;--paper:#F9FCFF;--line:#BBD4EA;--ink:#263D5B;--muted:#71859D;--accent:#E92F5D}
+html,body,[data-testid="stAppViewContainer"],.stApp{background:var(--pale)!important;color:var(--ink)!important}
+[data-testid="stHeader"]{background:rgba(234,243,251,.96)!important;border-bottom:1px solid var(--line)}
+[data-testid="stToolbar"]{top:.35rem;right:.75rem}
+[data-testid="stToolbar"] button{background:#F7FBFF!important;border:1px solid var(--line)!important;border-radius:9px!important;color:var(--navy)!important}
+[data-testid="stSidebar"]{background:#E3EFF9!important;border-right:1px solid var(--line)!important}
+[data-testid="stSidebar"] *{color:var(--ink)!important}
+.block-container{padding-top:4.1rem;padding-bottom:3rem;max-width:1480px}
+h1,h2,h3,h4{color:var(--navy)!important;letter-spacing:-.02em}
+p,li,span,small{color:inherit}
+.brand{display:flex;align-items:center;gap:14px;padding:18px 22px;background:linear-gradient(110deg,#D7E9F9,#F7FBFF);border:1px solid var(--line);border-radius:17px;color:var(--navy);margin-bottom:20px;box-shadow:0 3px 12px rgba(36,78,120,.06)}
+.brandmark{width:46px;height:46px;display:grid;place-items:center;border-radius:13px;background:#BBD8F0;color:var(--navy);font-size:25px}
+.brandtitle{font-size:25px;font-weight:750;color:var(--navy);line-height:1.15}.brandsub{font-size:11px;color:var(--blue);letter-spacing:.12em;text-transform:uppercase;margin-top:5px}
+.kicker{font-size:11px;color:var(--blue);font-weight:750;letter-spacing:.13em;text-transform:uppercase}
+.metriccard,.panel{background:var(--paper);border:1px solid var(--line);border-radius:15px;color:var(--ink);box-shadow:0 2px 8px rgba(36,78,120,.04)}
+.metriccard{padding:17px;min-height:108px}.metriclabel{font-size:13px;color:var(--muted);font-weight:700;line-height:1.35;overflow-wrap:anywhere}.metricvalue{font-size:29px;color:var(--navy);font-weight:750;margin-top:7px}.metricnote{font-size:11px;color:var(--muted);margin-top:6px}
+.panel{padding:17px 19px;margin:8px 0 15px}.softnote{background:#F5FAFF;border:1px solid var(--line);border-left:4px solid var(--blue);border-radius:10px;padding:12px 15px;color:var(--ink);font-size:13px}
+div.stButton>button,div.stDownloadButton>button{background:#2D67A1!important;color:#fff!important;border:1px solid #2D67A1!important;border-radius:10px!important;font-weight:650;min-height:42px}
+div.stButton>button:hover,div.stDownloadButton>button:hover{background:#1B4F83!important;border-color:#1B4F83!important}
+div.stButton>button:disabled{background:#E6EEF5!important;color:#71859D!important;border-color:var(--line)!important}
+div.stButton>button[kind="secondary"]{background:#F8FBFE!important;color:var(--navy)!important;border-color:var(--line)!important}
+[data-testid="stWidgetLabel"],[data-testid="stWidgetLabel"] *,label{color:var(--navy)!important;font-weight:600!important}
+[data-testid="stCaptionContainer"],[data-testid="stCaptionContainer"] *{color:var(--muted)!important}
+[data-testid="stFileUploader"]{background:var(--paper)!important;border:1px solid var(--line)!important;border-radius:18px!important;padding:12px!important;color:var(--ink)!important}
+[data-testid="stFileUploader"] [data-testid="stFileUploaderDropzone"]{background:#F5FAFF!important;border:1px solid #C4D8EA!important;border-radius:15px!important;min-height:86px!important;padding:12px 16px!important}
+[data-testid="stFileUploader"] [data-testid="stFileUploaderDropzone"] *{color:var(--ink)!important;-webkit-text-fill-color:var(--ink)!important}
+[data-testid="stFileUploader"] [data-testid="stFileUploaderDropzone"] button{background:#E5F0F8!important;color:var(--navy)!important;border:1px solid #AFCBE2!important;border-radius:13px!important}
+/* Uploaded filename chip follows the supplied reference. */
+[data-testid="stFileUploader"] [data-testid="stFileUploaderFile"]{background:#080808!important;border:1px solid #080808!important;border-radius:15px!important;padding:10px 14px!important;color:#fff!important}
+[data-testid="stFileUploader"] [data-testid="stFileUploaderFile"] *{color:#fff!important;-webkit-text-fill-color:#fff!important;opacity:1!important}
+[data-testid="stFileUploader"] [data-testid="stFileUploaderFile"] button{background:#080808!important;color:#fff!important;border:1px solid #DDE6ED!important;border-radius:50%!important}
+[data-testid="stSelectbox"] [data-baseweb="select"]>div,[data-testid="stMultiSelect"] [data-baseweb="select"]>div,div[data-baseweb="select"]>div{background:#F9FCFF!important;color:var(--ink)!important;border:1px solid var(--line)!important;border-radius:12px!important;box-shadow:0 1px 3px rgba(39,55,77,.06)!important}
+[data-testid="stSelectbox"] [data-baseweb="select"] *,[data-testid="stMultiSelect"] [data-baseweb="select"] *,div[data-baseweb="select"] *{color:var(--ink)!important;-webkit-text-fill-color:var(--ink)!important}
+[data-baseweb="popover"],[data-baseweb="menu"],[role="listbox"],[role="option"]{background:#F9FCFF!important;color:var(--ink)!important}
+[role="option"]:hover,[role="option"][aria-selected="true"]{background:#E4EFF8!important;color:var(--navy)!important}
+[data-testid="stTextInput"] input,[data-testid="stNumberInput"] input,[data-testid="stTextArea"] textarea{background:#F9FCFF!important;color:var(--ink)!important;border-color:var(--line)!important}
+[data-testid="stSlider"] [data-testid="stThumbValue"]{color:var(--accent)!important}
+[data-testid="stSlider"] [role="slider"]{background:var(--accent)!important}
+[data-testid="stMetric"]{background:var(--paper)!important;border:1px solid var(--line);border-radius:12px;padding:12px}
+[data-testid="stMetric"] label,[data-testid="stMetric"] [data-testid="stMetricLabel"]{color:var(--muted)!important}
+[data-testid="stMetric"] [data-testid="stMetricValue"]{color:var(--navy)!important}
+[data-testid="stDataFrame"],[data-testid="stTable"]{background:var(--paper)!important;border:1px solid var(--line);border-radius:11px;overflow:hidden}
+[data-testid="stExpander"]{background:var(--paper)!important;border:1px solid var(--line)!important;border-radius:16px!important;overflow:hidden!important}
+[data-testid="stExpander"] summary{background:linear-gradient(105deg,#D7E8F7,#EAF3FB)!important;padding:17px 20px!important}
+[data-testid="stExpander"] summary,[data-testid="stExpander"] summary *{color:var(--navy)!important;font-weight:700!important}
+[data-testid="stExpander"] [data-testid="stExpanderDetails"]{background:var(--paper)!important;padding:20px!important}
+[data-testid="stAlert"]{color:var(--ink)!important}hr{border-color:var(--line)!important}footer,#MainMenu{visibility:hidden}
+@media(max-width:900px){.block-container{padding-left:1rem;padding-right:1rem}.brand{padding:14px;flex-wrap:wrap}.brandtitle{font-size:21px}.brandsub{font-size:9px}.metriccard{min-height:96px;padding:12px}.metricvalue{font-size:25px}}
+</style>"""
 st.markdown(CSS, unsafe_allow_html=True)
 
 def init():
