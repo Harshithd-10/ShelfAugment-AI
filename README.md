@@ -1,10 +1,18 @@
-# ShelfAugment AI — Streamlit
+# ShelfAugment AI
 
-This is the Streamlit application for ShelfAugment AI. It includes single-image augmentation, YOLO annotation handling, batch processing, dataset QA, and TensorFlow dataset export preparation.
+Streamlit application for retail shelf-image augmentation, YOLO annotation validation, batch processing, and TensorFlow dataset export.
 
-## Deploy
-1. Replace the existing repository files with `app.py`, `requirements.txt`, and this README.
-2. In Streamlit Community Cloud, select the GitHub repository and set the main file to `app.py`.
-3. Reboot the app after the GitHub commit is complete.
+## Run locally
 
-The Image Studio controls use the supplied light-blue reference styling: readable white text on the black uploaded-file chip, pale dropdowns, and a soft-blue transformation-parameter header.
+```bash
+pip install -r requirements.txt
+streamlit run app.py
+```
+
+## Deploy with GitHub and Streamlit Community Cloud
+
+1. Upload `app.py`, `requirements.txt`, and this README to your GitHub repository.
+2. Create an app in Streamlit Community Cloud from that repository.
+3. Set the main file path to `app.py` and deploy.
+
+TensorFlow is not installed in the Streamlit deployment. The app exports a TensorFlow input package and pipeline script for execution in Kaggle or Colab.
