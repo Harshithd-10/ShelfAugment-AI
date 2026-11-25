@@ -17,24 +17,48 @@ st.set_page_config(page_title="ShelfAugment AI", page_icon="🛒", layout="wide"
 
 CSS = (
 '<style>'
-':root{--ivory:#DDE6ED;--paper:#F7FAFC;--sage:#9DB2BF;--sage2:#526D82;--forest:#27374D;--deep:#27374D;--terra:#526D82;--ink:#27374D;--muted:#526D82;--line:#C7D3DD}'
-'.stApp{background:var(--ivory);color:var(--ink)}[data-testid="stHeader"]{background:rgba(245,244,237,.94)}'
-'[data-testid="stSidebar"]{background:#DDE6ED;border-right:1px solid #9DB2BF}[data-testid="stSidebar"] *{color:var(--deep)}'
-'.block-container{padding-top:1.4rem;padding-bottom:3rem;max-width:1480px}h1,h2,h3{color:var(--deep)!important;letter-spacing:-.025em}'
-'.brand{display:flex;align-items:center;gap:14px;padding:18px 22px;background:var(--forest);border-radius:17px;color:#F7FAFC;margin-bottom:20px}'
-'.brandmark{width:46px;height:46px;display:grid;place-items:center;border-radius:13px;background:#9DB2BF;color:var(--forest);font-size:25px}'
+':root{color-scheme:light;--navy:#27374D;--blue:#526D82;--steel:#9DB2BF;--pale:#DDE6ED;--paper:#F7FAFC;--line:#C4D1DB;--ink:#27374D;--muted:#526D82}'
+'.stApp{background:var(--pale);color:var(--ink)}'
+'[data-testid="stHeader"]{background:rgba(221,230,237,.96)}'
+'[data-testid="stSidebar"]{background:#DDE6ED;border-right:1px solid #9DB2BF}'
+'[data-testid="stSidebar"] *{color:#27374D!important}'
+'[data-testid="stSidebar"] [data-testid="stRadio"] label{font-size:14px!important;font-weight:500!important}'
+'.block-container{padding-top:1.35rem;padding-bottom:3rem;max-width:1480px}'
+'h1,h2,h3,h4{color:#27374D!important;letter-spacing:-.02em}'
+'p,li,span,small{color:inherit}'
+'.brand{display:flex;align-items:center;gap:14px;padding:18px 22px;background:#27374D;border-radius:17px;color:#F7FAFC;margin-bottom:20px}'
+'.brandmark{width:46px;height:46px;display:grid;place-items:center;border-radius:13px;background:#9DB2BF;color:#27374D;font-size:25px}'
 '.brandtitle{font-size:25px;font-weight:750;color:#F7FAFC;line-height:1.15}.brandsub{font-size:11px;color:#DDE6ED;letter-spacing:.12em;text-transform:uppercase;margin-top:5px}'
-'.kicker{font-size:11px;color:var(--sage2);font-weight:750;letter-spacing:.13em;text-transform:uppercase}'
-'.metriccard{background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:17px;min-height:108px}'
-'.metriclabel{font-size:12px;color:var(--muted);font-weight:650}.metricvalue{font-size:29px;color:var(--deep);font-weight:750;margin-top:7px}'
-'.metricnote{font-size:11px;color:var(--sage2);margin-top:6px}.panel{background:var(--paper);border:1px solid var(--line);border-radius:15px;padding:17px 19px;margin:8px 0 15px}'
-'.softnote{background:#DDE6ED;border-left:4px solid var(--sage2);border-radius:9px;padding:12px 15px;color:#27374D;font-size:13px}'
-'div.stButton>button,div.stDownloadButton>button{background:#526D82;color:white;border:1px solid #526D82;border-radius:10px;font-weight:650;min-height:42px}'
-'div.stButton>button:hover,div.stDownloadButton>button:hover{background:#27374D;color:white;border-color:#27374D}'
-'div.stButton>button[kind="secondary"]{background:#F7FAFC;color:#27374D;border-color:#9DB2BF}'
-'[data-testid="stFileUploader"]{background:#F7FAFC;border:1px dashed #9DB2BF;border-radius:12px;padding:8px}'
-'[data-testid="stMetric"]{background:var(--paper);border:1px solid var(--line);border-radius:12px;padding:12px}'
-'[data-testid="stDataFrame"]{border:1px solid var(--line);border-radius:11px;overflow:hidden}hr{border-color:var(--line)}footer,#MainMenu{visibility:hidden}'
+'.kicker{font-size:11px;color:#526D82;font-weight:750;letter-spacing:.13em;text-transform:uppercase}'
+'.metriccard{background:#F7FAFC;border:1px solid #C4D1DB;border-radius:14px;padding:17px;min-height:108px;color:#27374D}'
+'.metriclabel{font-size:12px;color:#526D82;font-weight:650}.metricvalue{font-size:29px;color:#27374D;font-weight:750;margin-top:7px}'
+'.metricnote{font-size:11px;color:#526D82;margin-top:6px}.panel{background:#F7FAFC;border:1px solid #C4D1DB;border-radius:15px;padding:17px 19px;margin:8px 0 15px;color:#27374D}'
+'.softnote{background:#F7FAFC;border:1px solid #C4D1DB;border-left:4px solid #526D82;border-radius:9px;padding:12px 15px;color:#27374D;font-size:13px}'
+'div.stButton>button,div.stDownloadButton>button{background:#526D82!important;color:#FFFFFF!important;border:1px solid #526D82!important;border-radius:10px;font-weight:650;min-height:42px}'
+'div.stButton>button:hover,div.stDownloadButton>button:hover{background:#27374D!important;color:#FFFFFF!important;border-color:#27374D!important}'
+'div.stButton>button:disabled{background:#E7EDF2!important;color:#687D8D!important;border-color:#C4D1DB!important}'
+'div.stButton>button[kind="secondary"]{background:#F7FAFC!important;color:#27374D!important;border-color:#9DB2BF!important}'
+'[data-testid="stWidgetLabel"],[data-testid="stWidgetLabel"] p,label{color:#27374D!important;font-weight:600!important}'
+'[data-testid="stCaptionContainer"],[data-testid="stCaptionContainer"] *{color:#526D82!important}'
+'[data-testid="stFileUploader"]{background:#F7FAFC!important;border:1px dashed #9DB2BF!important;border-radius:12px;padding:9px}'
+'[data-testid="stFileUploader"] *{color:#27374D!important}'
+'[data-testid="stFileUploaderDropzone"]{background:#F7FAFC!important;border:1px solid #C4D1DB!important}'
+'[data-testid="stFileUploaderDropzone"] button{background:#E7EEF3!important;color:#27374D!important;border:1px solid #9DB2BF!important}'
+'[data-testid="stSelectbox"] div[data-baseweb="select"]>div,[data-testid="stMultiSelect"] div[data-baseweb="select"]>div{background:#F7FAFC!important;color:#27374D!important;border-color:#9DB2BF!important}'
+'[data-testid="stSelectbox"] *,[data-testid="stMultiSelect"] *{color:#27374D}'
+'[data-testid="stTextInput"] input,[data-testid="stNumberInput"] input,[data-testid="stTextArea"] textarea{background:#F7FAFC!important;color:#27374D!important;border-color:#9DB2BF!important}'
+'[data-testid="stSlider"] [data-testid="stTickBar"]{background:#9DB2BF}'
+'[data-testid="stSlider"] [data-testid="stThumbValue"]{color:#27374D!important}'
+'[data-testid="stMetric"]{background:#F7FAFC;border:1px solid #C4D1DB;border-radius:12px;padding:12px}'
+'[data-testid="stMetric"] label,[data-testid="stMetric"] [data-testid="stMetricLabel"]{color:#526D82!important}'
+'[data-testid="stMetric"] [data-testid="stMetricValue"]{color:#27374D!important}'
+'[data-testid="stDataFrame"],[data-testid="stTable"]{background:#F7FAFC;border:1px solid #C4D1DB;border-radius:11px;overflow:hidden}'
+'[data-testid="stDataFrame"] *{color:#27374D}'
+'[data-testid="stExpander"]{background:#F7FAFC;border:1px solid #C4D1DB;border-radius:11px}'
+'[data-testid="stExpander"] summary,[data-testid="stExpander"] summary *{color:#27374D!important;font-weight:600}'
+'[data-testid="stAlert"]{color:#27374D}'
+'hr{border-color:#9DB2BF!important}footer,#MainMenu{visibility:hidden}'
+'@media(max-width:800px){.block-container{padding-left:1rem;padding-right:1rem}.brand{padding:14px}.brandtitle{font-size:21px}.brandsub{font-size:9px}}'
 '</style>'
 )
 st.markdown(CSS, unsafe_allow_html=True)
@@ -111,8 +135,8 @@ def draw(im,boxes,labels):
     out=im.copy(); h,w=out.shape[:2]
     for b,c in zip(boxes,labels):
         x,y,bw,bh=b; p1=(max(0,int((x-bw/2)*w)),max(0,int((y-bh/2)*h))); p2=(min(w-1,int((x+bw/2)*w)),min(h-1,int((y+bh/2)*h)))
-        cv2.rectangle(out,p1,p2,(74,112,81),max(2,w//900))
-        cv2.putText(out,CLASSES[int(c)],(p1[0],max(18,p1[1]-6)),cv2.FONT_HERSHEY_SIMPLEX,max(.45,w/2500),(165,83,59),2)
+        cv2.rectangle(out,p1,p2,(130,109,82),max(2,w//900))
+        cv2.putText(out,CLASSES[int(c)],(p1[0],max(18,p1[1]-6)),cv2.FONT_HERSHEY_SIMPLEX,max(.45,w/2500),(77,55,39),2)
     return out
 
 def png(im):
@@ -196,7 +220,7 @@ def make_tf_source():
         " for n,d in [('train',train_dataset),('val',val_dataset),('test',test_dataset)]:",
         "  for x,y in d.take(1): print(n,x.shape,y.shape,float(tf.reduce_min(x)),float(tf.reduce_max(x)))",
     ]
-    return "\\n".join(lines) + "\\n"
+    return "\n".join(lines) + "\n"
 
 def make_tf_package(orig_zip,aug_zip,seed=42,val_fraction=.2):
     with tempfile.TemporaryDirectory() as td:
@@ -300,7 +324,7 @@ elif page=="Image Studio":
                     st.download_button("Download augmented image",r["image"],r["filename"]+"_augmented.png","image/png",use_container_width=True)
                     st.download_button("Download updated YOLO labels",r["labels"],r["filename"]+"_augmented.txt","text/plain",use_container_width=True)
         except Exception as e: st.error(f"Unable to process image: {e}")
-    else: st.markdown('<div class="softnote">YOLO labels are optional. Without labels, images can be transformed but object boxes cannot be measured or exported.</div>',unsafe_allow_html=True)
+    else: st.markdown('<div class="softnote"><b>Annotation note:</b> YOLO labels are optional. Without labels, images can be transformed, but object boxes cannot be measured or updated.</div>',unsafe_allow_html=True)
 
 elif page=="Batch Processing":
     st.markdown('<div class="kicker">MULTI-IMAGE WORKFLOW</div>',unsafe_allow_html=True); st.title("Batch processing")
