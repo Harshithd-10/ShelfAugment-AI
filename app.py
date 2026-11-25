@@ -137,6 +137,47 @@ html body .stApp [data-testid="stFileUploader"] [data-testid="stFileUploaderDrop
   color:#172F5B!important;-webkit-text-fill-color:#172F5B!important;
 }
 
+
+/* Final global override for every Streamlit file uploader on every app page. */
+html body .stApp div[data-testid="stFileUploader"] div[data-testid="stFileUploaderDropzone"]{
+  display:flex!important;flex-flow:column nowrap!important;align-items:stretch!important;
+  gap:10px!important;min-height:120px!important;padding:14px 16px!important;
+  background:#F5FAFF!important;border:1px solid #C4D8EA!important;border-radius:15px!important;
+}
+html body .stApp div[data-testid="stFileUploader"] div[data-testid="stFileUploaderFile"]{
+  display:flex!important;align-self:stretch!important;flex:0 0 auto!important;
+  width:100%!important;max-width:100%!important;min-height:76px!important;
+  box-sizing:border-box!important;padding:10px 14px!important;border-radius:15px!important;
+  background:#080808!important;background-color:#080808!important;border:1px solid #080808!important;
+  color:#FFFFFF!important;opacity:1!important;
+}
+html body .stApp div[data-testid="stFileUploader"] div[data-testid="stFileUploaderFile"] *{
+  color:#FFFFFF!important;-webkit-text-fill-color:#FFFFFF!important;
+  opacity:1!important;text-shadow:none!important;
+}
+html body .stApp div[data-testid="stFileUploader"] div[data-testid="stFileUploaderFile"] button,
+html body .stApp div[data-testid="stFileUploader"] div[data-testid="stFileUploaderFile"] button *{
+  color:#FFFFFF!important;-webkit-text-fill-color:#FFFFFF!important;
+  background:#080808!important;border-color:#DDE6ED!important;
+}
+html body .stApp div[data-testid="stFileUploader"] div[data-testid="stFileUploaderFile"] svg{
+  color:#FFFFFF!important;stroke:#FFFFFF!important;fill:none!important;
+}
+html body .stApp div[data-testid="stFileUploader"] [data-testid="stFileUploaderFileName"],
+html body .stApp div[data-testid="stFileUploader"] [data-testid="stFileUploaderFileName"] *,
+html body .stApp div[data-testid="stFileUploader"] [title],
+html body .stApp div[data-testid="stFileUploader"] [title] *{
+  color:#FFFFFF!important;-webkit-text-fill-color:#FFFFFF!important;opacity:1!important;
+}
+html body .stApp div[data-testid="stFileUploader"] div[data-testid="stFileUploaderDropzone"] button{
+  order:2!important;align-self:flex-start!important;justify-self:start!important;
+  color:#172F5B!important;-webkit-text-fill-color:#172F5B!important;
+  background:#E5F0F8!important;border:1px solid #AFCBE2!important;border-radius:13px!important;
+}
+html body .stApp div[data-testid="stFileUploader"] div[data-testid="stFileUploaderDropzone"] button *{
+  color:#172F5B!important;-webkit-text-fill-color:#172F5B!important;
+}
+
 </style>"""
 st.markdown(CSS, unsafe_allow_html=True)
 
