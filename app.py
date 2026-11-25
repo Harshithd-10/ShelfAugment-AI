@@ -65,6 +65,23 @@ div.stButton>button[kind="secondary"]{background:#F8FBFE!important;color:var(--n
   background:#080808!important;background-color:#080808!important;color:#FFFFFF!important;
   -webkit-text-fill-color:#FFFFFF!important;border:1px solid #DDE6ED!important;border-radius:50%!important;
 }
+/* Streamlit renders the uploaded filename in its own nested name element. */
+[data-testid="stFileUploaderFileName"],
+[data-testid="stFileUploaderFileName"] *,
+[data-testid="stFileUploaderFile"] [data-testid="stFileUploaderFileName"],
+[data-testid="stFileUploaderFile"] [data-testid="stFileUploaderFileName"] *,
+[data-testid="stFileUploaderFile"] [title],
+[data-testid="stFileUploaderFile"] [title] *{
+  color:#FFFFFF!important;-webkit-text-fill-color:#FFFFFF!important;
+  opacity:1!important;text-shadow:0 0 0 #FFFFFF!important;
+  filter:brightness(0) invert(1)!important;
+}
+[data-testid="stFileUploaderFile"]::before,
+[data-testid="stFileUploaderFile"]::after,
+[data-testid="stFileUploaderFile"] *::before,
+[data-testid="stFileUploaderFile"] *::after{
+  color:#FFFFFF!important;-webkit-text-fill-color:#FFFFFF!important;
+}
 [data-testid="stSelectbox"] [data-baseweb="select"]>div,[data-testid="stMultiSelect"] [data-baseweb="select"]>div,div[data-baseweb="select"]>div{background:#F9FCFF!important;color:var(--ink)!important;border:1px solid var(--line)!important;border-radius:12px!important;box-shadow:0 1px 3px rgba(39,55,77,.06)!important}
 [data-testid="stSelectbox"] [data-baseweb="select"] *,[data-testid="stMultiSelect"] [data-baseweb="select"] *,div[data-baseweb="select"] *{color:var(--ink)!important;-webkit-text-fill-color:var(--ink)!important}
 [data-baseweb="popover"],[data-baseweb="menu"],[role="listbox"],[role="option"]{background:#F9FCFF!important;color:var(--ink)!important}
