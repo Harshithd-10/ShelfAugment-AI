@@ -102,6 +102,41 @@ div.stButton>button[kind="secondary"]{background:#F8FBFE!important;color:var(--n
 [data-testid="stExpander"] [data-testid="stExpanderDetails"]{background:var(--paper)!important;padding:20px!important}
 [data-testid="stAlert"]{color:var(--ink)!important}hr{border-color:var(--line)!important}footer,#MainMenu{visibility:hidden}
 @media(max-width:900px){.block-container{padding-left:1rem;padding-right:1rem}.brand{padding:14px;flex-wrap:wrap}.brandtitle{font-size:21px}.brandsub{font-size:9px}.metriccard{min-height:96px;padding:12px}.metricvalue{font-size:25px}}
+
+/* Global uploader finish: applies to shelf images, labels, batch ZIPs, QA and TensorFlow inputs. */
+html body .stApp [data-testid="stFileUploader"] [data-testid="stFileUploaderDropzone"]{
+  display:grid!important;grid-template-columns:minmax(0,1fr)!important;
+  align-content:start!important;justify-items:stretch!important;gap:10px!important;
+  background:#F5FAFF!important;background-color:#F5FAFF!important;
+  border:1px solid #C4D8EA!important;border-radius:15px!important;
+  min-height:120px!important;padding:14px 16px!important;
+}
+html body .stApp [data-testid="stFileUploader"] [data-testid="stFileUploaderDropzone"] [data-testid="stFileUploaderFile"]{
+  width:100%!important;max-width:100%!important;min-height:76px!important;
+  box-sizing:border-box!important;grid-column:1!important;justify-self:stretch!important;
+  background:#080808!important;background-color:#080808!important;
+  border:1px solid #080808!important;border-radius:15px!important;padding:10px 14px!important;
+  color:#fff!important;opacity:1!important;
+}
+html body .stApp [data-testid="stFileUploader"] [data-testid="stFileUploaderFile"] *:not(button):not(button *):not(svg):not(svg *){
+  color:#fff!important;-webkit-text-fill-color:#fff!important;
+  opacity:1!important;text-shadow:none!important;
+}
+html body .stApp [data-testid="stFileUploader"] [data-testid="stFileUploaderFile"] [data-testid="stFileUploaderFileName"],
+html body .stApp [data-testid="stFileUploader"] [data-testid="stFileUploaderFile"] [data-testid="stFileUploaderFileName"] *,
+html body .stApp [data-testid="stFileUploader"] [data-testid="stFileUploaderFile"] [title],
+html body .stApp [data-testid="stFileUploader"] [data-testid="stFileUploaderFile"] [title] *{
+  color:#fff!important;-webkit-text-fill-color:#fff!important;opacity:1!important;
+}
+html body .stApp [data-testid="stFileUploader"] [data-testid="stFileUploaderDropzone"] button{
+  justify-self:start!important;align-self:start!important;grid-column:1!important;order:2!important;
+  background:#E5F0F8!important;background-color:#E5F0F8!important;color:#172F5B!important;
+  border:1px solid #AFCBE2!important;border-radius:13px!important;
+}
+html body .stApp [data-testid="stFileUploader"] [data-testid="stFileUploaderDropzone"] button *{
+  color:#172F5B!important;-webkit-text-fill-color:#172F5B!important;
+}
+
 </style>"""
 st.markdown(CSS, unsafe_allow_html=True)
 
